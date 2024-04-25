@@ -1,11 +1,19 @@
+import json
+from datetime import datetime
+
 list_applications = []
+
 class JobApplication:
-    def __init__(self, name, age, work_experience, qualities):
+    def __init__(self, name, birth_date, work_experience, qualities):
         self.name = name
-        self.age = age
+        self.birth_date = birth_date
         self.work_experience = work_experience
         self.qualities = qualities
         self.estimation = 0
+
+    def calculate_age(self):
+        today = datetime.today()
+        self.age = today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
 
     def criteria_age(self):
         if 18 < self.age < 55:
@@ -33,28 +41,37 @@ class JobApplication:
     def employed(self):
         if self.estimation >= 2:
             print("Вы отлично, ваша заявка была отправлена на рассмотрение.\n")
-            list_applications.append(f"Имя: {self.name}")
-            list_applications.append(f"Примерный год рождения: {2023 - self.age}")
-            list_applications.append("Опыт работы: " + str(self.work_experience) + " Год" if int(self.work_experience) == 1 else "Опыт работы: " + str(self.work_experience) + " Года" if 1 < int(self.work_experience) < 5 else "Опыт работы: " + str(self.work_experience) + " Лет")
-            list_applications.append("Качества: " + self.qualities)
+            list_applications.append({
+                "Имя": self.name,
+                "Дата рождения": self.birth_date.strftime("%Y-%m-%d"),
+                "Опыт работы": str(self.work_experience) + " Год" if int(self.work_experience) == 1 else str(self.work_experience) + " Года" if 1 < int(self.work_experience) < 5 else str(self.work_experience) + " Лет",
+                "Качества": self.qualities
+            })
+            self.save_to_json()
         else:
             print("Мы вам перезвоним.\n")
 
+    def save_to_json(self):
+        with open("applications.json", "w") as file:
+            json.dump(list_applications, file, indent=4)
+
 name = input("Укажите своё имя: \n")
 try:
-    age = int(input("Укажите сколько вам лет: \n"))
+    birth_date_str = input("Введите вашу дату рождения в формате ГГГГ-ММ-ДД: \n")
+    birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d")
 except ValueError:
-    print("Вы ввели некорректный возраст, попробуйте ещё раз.\n")
+    print("Вы ввели некорректную дату рождения, попробуйте ещё раз.\n")
     exit()
 
 work_experience = input("Есть ли у вас опыт работы? Если есть, укажите сколько лет. Если нет, то напишите 'нет': \n")
 qualities = input("Назовите ваши качества, например: трудолюбие, упорство, ответственность, общительность: \n")
 
-application = JobApplication(name, age, work_experience, qualities)
+application = JobApplication(name, birth_date, work_experience, qualities)
+application.calculate_age()
 application.criteria_age()
 application.criteria_exp()
 application.criteria_qlts()
 application.employed()
 
-print(*list_applications, sep='\n')
-  
+with open("applications.json", "w", encoding="utf-8") as file:
+    json.dump(list_applications, file, ensure_ascii=False, indent=4)
