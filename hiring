@@ -1,5 +1,7 @@
-import json
+import tkinter as tk
+from tkinter import font
 from datetime import datetime
+import json
 
 list_applications = []
 
@@ -55,23 +57,55 @@ class JobApplication:
         with open("applications.json", "w") as file:
             json.dump(list_applications, file, indent=4)
 
-name = input("Укажите своё имя: \n")
-try:
-    birth_date_str = input("Введите вашу дату рождения в формате ГГГГ-ММ-ДД: \n")
-    birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d")
-except ValueError:
-    print("Вы ввели некорректную дату рождения, попробуйте ещё раз.\n")
-    exit()
 
-work_experience = input("Есть ли у вас опыт работы? Если есть, укажите сколько лет. Если нет, то напишите 'нет': \n")
-qualities = input("Назовите ваши качества, например: трудолюбие, упорство, ответственность, общительность: \n")
+def submit_application():
+    name = name_entry.get()
+    try:
+        birth_date_str = birth_date_entry.get()
+        birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d")
+    except ValueError:
+        print("Вы ввели некорректную дату рождения, попробуйте ещё раз.\n")
+        return
 
-application = JobApplication(name, birth_date, work_experience, qualities)
-application.calculate_age()
-application.criteria_age()
-application.criteria_exp()
-application.criteria_qlts()
-application.employed()
+    work_experience = exp_entry.get()
+    qualities = qlts_entry.get()
 
-with open("applications.json", "w", encoding="utf-8") as file:
-    json.dump(list_applications, file, ensure_ascii=False, indent=4)
+    application = JobApplication(name, birth_date, work_experience, qualities)
+    application.calculate_age()
+    application.criteria_age()
+    application.criteria_exp()
+    application.criteria_qlts()
+    application.employed()
+
+
+root = tk.Tk()
+root.title("Job Application")
+
+
+default_font = font.nametofont("TkDefaultFont")
+default_font.configure(size=14)
+root.option_add("*Font", default_font)
+
+
+tk.Label(root, text="Имя:", font=("Arial", 14)).grid(row=0, column=0)
+tk.Label(root, text="Дата рождения (ГГГГ-ММ-ДД):", font=("Arial", 14)).grid(row=1, column=0)
+tk.Label(root, text="Опыт работы (лет):", font=("Arial", 14)).grid(row=2, column=0)
+tk.Label(root, text="Качества:", font=("Arial", 14)).grid(row=3, column=0)
+
+
+name_entry = tk.Entry(root, font=("Arial", 14))
+name_entry.grid(row=0, column=1)
+
+
+birth_date_entry = tk.Entry(root, font=("Arial", 14))
+birth_date_entry.grid(row=1, column=1)
+exp_entry = tk.Entry(root, font=("Arial", 14))
+exp_entry.grid(row=2, column=1)
+qlts_entry = tk.Entry(root, font=("Arial", 14))
+qlts_entry.grid(row=3, column=1)
+
+
+submit_button = tk.Button(root, text="Отправить заявку", font=("Arial", 14), command=submit_application)
+submit_button.grid(row=4, column=0, columnspan=2)
+
+root.mainloop()
