@@ -1,44 +1,30 @@
 import tkinter as tk
 from tkinter import messagebox
 
-# Инициализация списков с меню и ценами
 Basket = []
 list_menu = ["Гамбургер", "Чизбургер", "Картофель фри", "Кока-кола", "Шейк"]
 prices = [150, 120, 80, 100, 250]
+ingredients = {
+    "Гамбургер": ["Котлета", "Помидор", "Лук", "Соус", "Соленые огурчики"],
+    "Чизбургер": ["Котлета", "Сыр", "Помидор", "Лук", "Соус", "Соленые огурчики"],
+    "Картофель фри": ["Картофель", "Масло"],
+    "Кока-кола": ["Вода", "Сахар", "Углекислота", "Краситель"],
+    "Шейк": ["Молоко", "Мороженое", "Сироп"]
+}
 
-# Функция для подсчета общей стоимости корзины
 def total_price():
-    Total_price = Basket.count(list_menu[0]) * prices[0] + Basket.count(list_menu[1]) * prices[1] + Basket.count(list_menu[2]) * prices[2] + Basket.count(list_menu[3]) * prices[3] + Basket.count(list_menu[4]) * prices[4]
-    return Total_price
+    total_price = 0
+    for item, price in zip(list_menu, prices):
+        total_price += Basket.count(item) * price
+    return total_price
 
-# Функция для отображения главного меню
-def menu(parent):
-    for widget in parent.winfo_children():
-        widget.destroy()
-
-    menu_label = tk.Label(parent, text="Выберите опцию:")
-    menu_label.pack()
-
-    order_button = tk.Button(parent, text="Перейти к меню", command=lambda: go_to_order(parent))
-    order_button.pack()
-
-    payment_button = tk.Button(parent, text="Оплата", command=lambda: payment(parent))
-    payment_button.pack()
-
-    edit_cart_button = tk.Button(parent, text="Редактирование корзины", command=lambda: editing_cart(parent))
-    edit_cart_button.pack()
-
-# Функция для отображения меню заказа и корзины
 def go_to_order(parent):
+    parent.title("Меню заказа")
     for widget in parent.winfo_children():
         widget.destroy()
 
     order_label = tk.Label(parent, text="Выберите товар, который желаете заказать:")
     order_label.pack()
-
-    for i, item in enumerate(list_menu):
-        item_button = tk.Button(parent, text=f"{i+1} - {item} ({prices[i]} рублей)", command=lambda x=item: add_to_basket(x, parent))
-        item_button.pack()
 
     cart_frame = tk.Frame(parent)
     cart_frame.pack()
@@ -49,18 +35,41 @@ def go_to_order(parent):
     cart_items = []
     for i, item in enumerate(list_menu):
         item_count = Basket.count(item)
-        item_label = tk.Label(cart_frame, text=f"{i+1} - {item}: {item_count} - {item_count * prices[i]} рублей")
-        item_label.pack()
-        cart_items.append(item_label)
+        item_frame = tk.Frame(cart_frame)
+        item_frame.pack()
+        item_label = tk.Label(item_frame, text=f"{i+1} - {item} ({prices[i]} рублей)")
+        item_label.pack(side=tk.LEFT)
+        decrease_button = tk.Button(item_frame, text="-", command=lambda x=item: remove_from_basket(x, parent))
+        decrease_button.pack(side=tk.LEFT)
+        increase_button = tk.Button(item_frame, text="+", command=lambda x=item: add_to_basket(x, parent))
+        increase_button.pack(side=tk.LEFT)
+        item_count_label = tk.Label(item_frame, text=f"Количество: {item_count}")
+        item_count_label.pack(side=tk.LEFT)
 
-# Функция для добавления товара в корзину и обновления ее содержимого
+    total_price_label = tk.Label(cart_frame, text=f"Общая сумма: {total_price()} рублей")
+    total_price_label.pack()
+
+    payment_button = tk.Button(parent, text="Оплата", command=lambda: payment(parent))
+    payment_button.pack()
+
+    back_button = tk.Button(parent, text="Выход", command=parent.quit)
+    back_button.pack()
+
 def add_to_basket(item, parent):
     Basket.append(item)
     messagebox.showinfo("Корзина", f"{item} добавлен в корзину!")
     go_to_order(parent)
 
-# Функция для отображения окна оплаты
+def remove_from_basket(item, parent):
+    if item in Basket:
+        Basket.remove(item)
+        messagebox.showinfo("Корзина", f"{item} удален из корзины!")
+    else:
+        messagebox.showerror("Ошибка", f"{item} не находится в корзине.")
+    go_to_order(parent)
+
 def payment(parent):
+    parent.title("Окно оплаты")
     for widget in parent.winfo_children():
         widget.destroy()
 
@@ -77,11 +86,11 @@ def payment(parent):
     cash_button = tk.Button(parent, text="Наличными", command=lambda: pay_cash(parent))
     cash_button.pack()
 
-    back_button = tk.Button(parent, text="Назад", command=lambda: menu(parent))
+    back_button = tk.Button(parent, text="Назад", command=lambda: go_to_order(parent))
     back_button.pack()
 
-# Функция для оплаты картой
 def pay_by_card(parent):
+    parent.title("Оплата картой")
     for widget in parent.winfo_children():
         widget.destroy()
 
@@ -89,6 +98,7 @@ def pay_by_card(parent):
     card_label.pack()
 
     card_number_label = tk.Label(parent, text="Номер карты:")
+
     card_number_label.pack()
     card_number_entry = tk.Entry(parent)
     card_number_entry.pack()
@@ -101,7 +111,6 @@ def pay_by_card(parent):
     cvv_label = tk.Label(parent, text="CVV:")
     cvv_label.pack()
     cvv_entry = tk.Entry(parent, show="*")
-
     cvv_entry.pack()
 
     pay_button = tk.Button(parent, text="Оплатить",
@@ -109,19 +118,17 @@ def pay_by_card(parent):
                                                                 cvv_entry.get()))
     pay_button.pack()
 
-    back_button = tk.Button(parent, text="Назад", command=lambda: menu(parent))
+    back_button = tk.Button(parent, text="Назад", command=lambda: payment(parent))
     back_button.pack()
 
 
-# Функция для обработки оплаты картой
 def process_card_payment(card_number, expiry_date, cvv):
-    # Здесь можно добавить логику проверки валидности данных карты
     messagebox.showinfo("Оплата", "Спасибо за покупку!")
     Basket.clear()
 
 
-# Функция для оплаты наличными
 def pay_cash(parent):
+    parent.title("Оплата наличными")
     for widget in parent.winfo_children():
         widget.destroy()
 
@@ -133,11 +140,10 @@ def pay_cash(parent):
     cash_entry.pack()
     pay_button = tk.Button(parent, text="Оплатить", command=lambda: process_cash_payment(cash_amount.get()))
     pay_button.pack()
-    back_button = tk.Button(parent, text="Назад", command=lambda: menu(parent))
+    back_button = tk.Button(parent, text="Назад", command=lambda: payment(parent))
     back_button.pack()
 
 
-# Функция для обработки оплаты наличными
 def process_cash_payment(cash_amount):
     total_price_value = total_price()
     if cash_amount > total_price_value:
@@ -151,79 +157,7 @@ def process_cash_payment(cash_amount):
         messagebox.showerror("Ошибка", "Вы дали недостаточную сумму для оплаты заказа.")
 
 
-# Функция для редактирования содержимого корзины
-def editing_cart(parent):
-    if not Basket:
-        messagebox.showerror("Ошибка", "Корзина пуста!")
-        return
-
-    for widget in parent.winfo_children():
-        widget.destroy()
-
-    edit_label = tk.Label(parent, text="Выберите товар для редактирования:")
-    edit_label.pack()
-
-    for i, item in enumerate(list_menu):
-        item_button = tk.Button(parent, text=f"{i + 1} - {item}", command=lambda x=item: change_basket(x, parent))
-        item_button.pack()
-
-    back_button = tk.Button(parent, text="Назад", command=lambda: menu(parent))
-    back_button.pack()
-
-
-# Функция для отображения опций редактирования количества товара в корзине
-def change_basket(item, parent):
-    for widget in parent.winfo_children():
-        widget.destroy()
-
-    change_label = tk.Label(parent, text=f"Хотите изменить количество {item}?")
-    change_label.pack()
-
-    decrease_button = tk.Button(parent, text="Уменьшить", command=lambda: modify_basket(item, "decrease", parent))
-    decrease_button.pack()
-
-    increase_button = tk.Button(parent, text="Увеличить", command=lambda: modify_basket(item, "increase", parent))
-    increase_button.pack()
-
-    back_button = tk.Button(parent, text="Назад", command=lambda: editing_cart(parent))
-    back_button.pack()
-
-
-# Функция для ввода количества товара для изменения в корзине
-def modify_basket(item, action, parent):
-    for widget in parent.winfo_children():
-        widget.destroy()
-
-    amount = tk.IntVar()
-    modify_label = tk.Label(parent, text=f"Введите количество, на которое хотите {action} {item}:")
-    modify_label.pack()
-    modify_entry = tk.Entry(parent, textvariable=amount)
-    modify_entry.pack()
-    modify_button = tk.Button(parent, text="Применить",
-                              command=lambda: process_basket_modification(item, action, amount.get(), parent))
-    modify_button.pack()
-    back_button = tk.Button(parent, text="Назад", command=lambda: change_basket(item, parent))
-
-    back_button.pack()
-
-
-# Функция для обработки изменения количества товара в корзине
-def process_basket_modification(item, action, amount, parent):
-    if action == "decrease":
-        for _ in range(amount):
-            if item in Basket:
-                Basket.remove(item)
-            else:
-                messagebox.showerror("Ошибка", f"В корзине нет {item} для удаления.")
-                break
-    elif action == "increase":
-        for _ in range(amount):
-            Basket.append(item)
-    messagebox.showinfo("Корзина", f"Количество {item} было {action}о на {amount}.")
-    change_basket(item, parent)
-
-
-# Создание главного окна и запуск программы
-root = tk.Tk()  # Главное окно приложения
-menu(root)  # Отображение Главного меню
+root = tk.Tk()
+root.title("Ресторан")
+go_to_order(root)
 root.mainloop()
