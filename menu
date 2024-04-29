@@ -145,42 +145,33 @@ def customize_sauces(item_name):
 
 def cart():
     total_price_value, additional_cost, add_ons_cost, sauces_cost = total_price()
-
     print("Корзина:")
     for item in Basket:
         if isinstance(item, list):
             item_name, *customizations = item
-            if item_name in list_menu:
-                index = list_menu.index(item_name)
-                price = prise_menu[index]
-            else:
-                price = 0
-
-            print(f"- {item_name} (₽{price})", end="")
-
+            print(f"- {item_name} (₽{prise_menu[list_menu.index(item_name)]})", end="")
             if customizations:
-                if item_name == "Шейк":
-                    print(f" ({customizations[0]})", end="")
-                print(f" (дополнительно: ", end="")
-                if len(customizations) > 1:
-                    print(f"{customizations[1]} (₽{sizes[customizations[1]]})", end="")
-                if len(customizations) > 2:
-                    print(f", {', '.join(customizations[2])} (₽{len(customizations[2]) * 20})", end="")
+                print(" (дополнительно:", end="")
+                for i, customization in enumerate(customizations):
+                    if i == 0:  # Перечисляем ингредиенты
+                        ingredients = customization
+                        for ingredient in ingredients:
+                            if isinstance(ingredient, (list, tuple)):
+                                print(f" {ingredient[0]} (₽{ingredient[1]})", end="")
+                    elif i == 1:  # Размер порции
+                        print(f" {customization} (₽{sizes.get(customization, 0)})", end="")
+                    elif i == 2:  # Соусы
+                        print(f" Соусы:", end="")
+                        for sauce in customization:
+                            print(f" {sauce} (₽20)", end="")
                 print(")", end="")
-
-            if Basket.count(item) > 1:
-                print(f" x {Basket.count(item)}", end="")
-
             print()
-            total_cost = total_price_value + additional_cost + add_ons_cost + sauces_cost
-            print(f"\nИтоговая стоимость заказа: ₽{total_cost}")
+    print(f"Итоговая стоимость заказа: ₽{total_price_value + additional_cost + add_ons_cost + sauces_cost}")
+    print(f"Дополнительные ингредиенты: ₽{additional_cost}")
+    print(f"Размер порции: ₽{add_ons_cost}")
+    print(f"Соусы: ₽{sauces_cost}")
 
-            if additional_cost:
-                print(f"Дополнительные ингредиенты: ₽{additional_cost}")
-            if add_ons_cost:
-                print(f"Размер порции: ₽{add_ons_cost}")
-            if sauces_cost:
-                print(f"Соусы: ₽{sauces_cost}")
+
 
 def go_to_order():
     menu_items = ("\n 1 - Гамбургер"
