@@ -1,41 +1,53 @@
 Basket = []
-list_menu = ["Гамбургер", "Чизбургер", "Картофель фри", "Кока-кола", "Шейк"]
-prise_menu = [150, 150, 80, 100, 250]
+list_menu = ("Гамбургер", "Чизбургер", "Двойной Гамбургер", "Двойной Чизбургер", "Крабсбургер", "Картофель фри", "Кока-кола", "Фанта", "Спрайт", "Шейк", "Крылышки", "Ножки", "Нагетсы", "Соус", )
+prise_menu = (120, 180, 240, 360, 110, 50, 70, 60, 50, 100, 80, 90, 20)
 burger_ingredients = [["Котлета", 40], ["Сыр", 30], ["Салат", 10], ["Соус", 20], ["Помидор", 15]]
-cheeseburger_ingredients = [["Котлета", 40], ["Сыр", 90], ["Салат", 10], ["Соус", 20]]
+cheeseburger_ingredients = [["Котлета", 40], ["Тройной Сыр", 90], ["Салат", 10], ["Соус", 20]]
+crabsburger_ingredients = [["Крабовые палочки", 50], ["Салат", 10], ["Соус", 20], ["Помидор", 15]]
 shake_ingredients = [["Молоко", 10], ["Сироп", 15], ["Шоколад", 20], ["Орехи", 25]]
 sizes = {"Маленький": -20, "Средний": 0, "Большой": 20}
-shake_flavors = ["Классический", "Шоколадный", "Ванильный"]
+shake_flavors = ["Классический", "Шоколадный", "Ванильный", "Клубничный", "Банановый"]
+sauces = ["Кетчуп", "Чесночный", "Барбекю", "Сырный", "Ранч", "Кисло-сладкий"]
+
 
 def total_price():
     total_price = 0
+    additional_ingredients_cost = 0
+    size_cost = 0
+    sauces_cost = 0
+
     for item in Basket:
-        if isinstance(item, tuple):
+        if isinstance(item, list):
             item_name, *customizations = item
-            if item_name == "Гамбургер":
-                total_price += prise_menu[list_menu.index(item_name)]
-                if customizations:
-                    for ingredient in customizations[0]:
-                        total_price += ingredient[1]
-            elif item_name == "Чизбургер":
-                total_price += prise_menu[list_menu.index(item_name)]
-                if customizations:
-                    for ingredient in customizations[0]:
-                        total_price += ingredient[1]
-            elif item_name == "Шейк":
-                total_price += prise_menu[list_menu.index("Шейк")]
-                if customizations:
-                    for ingredient in customizations[1]:
-                        total_price += ingredient[1]
-            else:
+            if item_name in list_menu:
                 index = list_menu.index(item_name)
-                total_price += prise_menu[index]
-                if customizations:
-                    total_price += customizations[2]
-        else:
-            index = list_menu.index(item)
-            total_price += Basket.count(item) * prise_menu[index]
-    return total_price
+                price = prise_menu[index]
+                if customizations and len(customizations) > 2:
+                    sauces = customizations[2]
+                    sauces_cost += sum(sauces.count(sauce) * 20 for sauce in sauces)
+                if customizations and len(customizations) > 1:
+                    size_name = customizations[1]
+                    if isinstance(size_name, str):
+                        size_cost += sizes.get(size_name, 0)
+                if item_name == "Гамбургер":
+                    for ingredient in burger_ingredients:
+                        additional_ingredients_cost += ingredient[1]
+                elif item_name == "Чизбургер":
+                    for ingredient in cheeseburger_ingredients:
+                        additional_ingredients_cost += ingredient[1]
+                elif item_name == "Крабсбургер":
+                    for ingredient in crabsburger_ingredients:
+                        additional_ingredients_cost += ingredient[1]
+                elif item_name == "Шейк":
+                    for ingredient in shake_ingredients:
+                        additional_ingredients_cost += ingredient[1]
+                    shake_flavor = customizations[0]
+                    if shake_flavor not in shake_flavors:
+                        additional_ingredients_cost += 10
+                total_price += price
+
+    return total_price, additional_ingredients_cost, size_cost, sauces_cost
+
 
 def menu():
     menu_options = ("\n 1 - Перейти к меню "
@@ -45,46 +57,146 @@ def menu():
     return menu_options
 
 def customize_item(item_name):
-    selected_ingredients = []
+    global Basket
     if item_name == "Гамбургер":
         ingredients_list = burger_ingredients
     elif item_name == "Чизбургер":
         ingredients_list = cheeseburger_ingredients
+    elif item_name == "Крабсбургер":
+        ingredients_list = crabsburger_ingredients
     elif item_name == "Шейк":
         ingredients_list = shake_ingredients
-        selected_flavor = input("Выберите вкус шейка (Классический, Шоколадный, Ванильный): ")
-        if selected_flavor not in shake_flavors:
-            print("Неверный вкус шейка.")
-            return
+    else:
+        ingredients_list = []
 
-    for i, ingredient in enumerate(ingredients_list):
-        print(f"{i+1} - {ingredient[0]} ({ingredient[1]} руб.)")
-    ingredient_indices = input("Введите номера ингредиентов через запятую: ").split(",")
-    for index_str in ingredient_indices:
-        index = int(index_str.strip())
-        if 1 <= index <= len(ingredients_list):
-            selected_ingredients.append(ingredients_list[index - 1])
+    customize = []
+    if ingredients_list:
+        print(f"Выберите ингредиенты для {item_name} (введите номера через запятую):")
+        for i, ingredient in enumerate(ingredients_list):
+            print(f"{i + 1} - {ingredient[0]} ({ingredient[1]} руб.)")
+
+        selected_ingredients = input("Введите номера ингредиентов через запятую (или нажмите Enter, чтобы пропустить): ")
+        if selected_ingredients:
+            selected_ingredients = [int(x) - 1 for x in selected_ingredients.split(",")]
+            customize = [ingredients_list[i] for i in selected_ingredients]
 
     if item_name == "Шейк":
-        Basket.append((item_name, selected_flavor, selected_ingredients))
-    else:
-        Basket.append((item_name, selected_ingredients))
+        print("Выберите вкус шейка:")
+        for i, flavor in enumerate(shake_flavors):
+            print(f"{i + 1} - {flavor}")
+        flavor_choice = int(input("Введите номер вкуса: "))
+        customize.insert(0, shake_flavors[flavor_choice - 1])
 
-def customize_fries_soda(item_name):
+    size_choice = int(input("Выберите размер порции:\n1 - Маленький (-20 руб.)\n2 - Средний (0 руб.)\n3 - Большой (20 руб.)\nВведите номер: "))
+    size_name = list(sizes.keys())[size_choice - 1]
+    customize.append(size_name)
+
+    if item_name not in ["Шейк", "Картошка Фри", "Кола", "Нагетсы"]:
+        selected_sauces = input("Выберите соусы (введите номера через запятую):\n1 - Кетчуп\n2 - Чесночный\n3 - Барбекю\n4 - Сырный\n5 - Ранч\n6 - Кисло-сладкий\nВведите номера соусов через запятую (или нажмите Enter, чтобы пропустить): ")
+        if selected_sauces:
+            selected_sauces = [sauces[int(x) - 1] for x in selected_sauces.split(",")]
+            customize.append(selected_sauces)
+
+    Basket.append([item_name] + customize)
+def customize_fries_soda_nuggets(item_name):
     for i, size in enumerate(sizes):
         print(f"{i+1} - {size} ({sizes[size]} руб.)")
-    size_choice = int(input("Введите номер размера: "))
-    if 1 <= size_choice <= len(sizes):
+    size_choice = int(input("Введите номер размера (или 0, чтобы пропустить): "))
+    if size_choice == 0:
+        Basket.append(item_name)
+    elif 1 <= size_choice <= len(sizes):
         size_name = list(sizes.keys())[size_choice - 1]
         size_price = sizes[size_name]
         Basket.append((item_name, size_name, size_price))
+        if item_name in ["Крылышки", "Ножки", "Нагетсы"]:
+            customize_sauces(item_name)
+
+def customize_sauces(item_name):
+    if item_name == "Соус":
+        print("Выберите соусы (введите номера через запятую):")
+        for i, sauce in enumerate(sauces):
+            print(f"{i+1} - {sauce}")
+        sauce_indices = input("Введите номера соусов через запятую (или нажмите Enter, чтобы пропустить): ").split(",")
+        selected_sauces = []
+        for index_str in sauce_indices:
+            if index_str:
+                index = int(index_str.strip())
+                if 1 <= index <= len(sauces):
+                    selected_sauces.append(sauces[index - 1])
+        if selected_sauces:
+            Basket.append(("Соус", selected_sauces))
+        else:
+            Basket.append(item_name)
+    else:
+        print("Выберите соусы (введите номера через запятую):")
+        for i, sauce in enumerate(sauces):
+            print(f"{i+1} - {sauce}")
+        sauce_indices = input("Введите номера соусов через запятую (или нажмите Enter, чтобы пропустить): ").split(",")
+        selected_sauces = []
+        for index_str in sauce_indices:
+            if index_str:
+                index = int(index_str.strip())
+                if 1 <= index <= len(sauces):
+                    selected_sauces.append(sauces[index - 1])
+        if selected_sauces:
+            Basket.append((item_name, selected_sauces))
+        else:
+            Basket.append(item_name)
+
+def cart():
+    total_price_value, additional_cost, add_ons_cost, sauces_cost = total_price()
+
+    print("Корзина:")
+    for item in Basket:
+        if isinstance(item, list):
+            item_name, *customizations = item
+            if item_name in list_menu:
+                index = list_menu.index(item_name)
+                price = prise_menu[index]
+            else:
+                price = 0
+
+            print(f"- {item_name} (₽{price})", end="")
+
+            if customizations:
+                if item_name == "Шейк":
+                    print(f" ({customizations[0]})", end="")
+                print(f" (дополнительно: ", end="")
+                if len(customizations) > 1:
+                    print(f"{customizations[1]} (₽{sizes[customizations[1]]})", end="")
+                if len(customizations) > 2:
+                    print(f", {', '.join(customizations[2])} (₽{len(customizations[2]) * 20})", end="")
+                print(")", end="")
+
+            if Basket.count(item) > 1:
+                print(f" x {Basket.count(item)}", end="")
+
+            print()
+            total_cost = total_price_value + additional_cost + add_ons_cost + sauces_cost
+            print(f"\nИтоговая стоимость заказа: ₽{total_cost}")
+
+            if additional_cost:
+                print(f"Дополнительные ингредиенты: ₽{additional_cost}")
+            if add_ons_cost:
+                print(f"Размер порции: ₽{add_ons_cost}")
+            if sauces_cost:
+                print(f"Соусы: ₽{sauces_cost}")
 
 def go_to_order():
     menu_items = ("\n 1 - Гамбургер"
                   "\n 2 - Чизбургер"
-                  "\n 3 - Картофель фри"
-                  "\n 4 - Кока-кола"
-                  "\n 5 - Шейк")
+                  "\n 3 - Двойной Гамбургер"
+                  "\n 4 - Двойной Чизбургер"
+                  "\n 5 - Крабсбургер"
+                  "\n 6 - Картофель фри"
+                  "\n 7 - Кока-кола"
+                  "\n 8 - Фанта"
+                  "\n 9 - Спрайт"
+                  "\n 10 - Шейк"
+                  "\n 11 - Крылышки"
+                  "\n 12 - Ножки"
+                  "\n 13 - Нагетсы"
+                  "\n 14 - Соус")
     print(menu_items)
     order = int(input("Введите цифру товара который желаете заказать: "))
 
@@ -93,69 +205,41 @@ def go_to_order():
     elif order == 2:
         customize_item("Чизбургер")
     elif order == 3:
-        customize_fries_soda("Картофель фри")
+        customize_item("Двойной Гамбургер")
     elif order == 4:
-        customize_fries_soda("Кока-кола")
+        customize_item("Двойной Чизбургер")
     elif order == 5:
+        customize_item("Крабсбургер")
+    elif order == 6:
+        customize_fries_soda_nuggets("Картофель фри")
+    elif order == 7:
+        customize_fries_soda_nuggets("Кока-кола")
+    elif order == 8:
+        customize_fries_soda_nuggets("Фанта")
+    elif order == 9:
+        customize_fries_soda_nuggets("Спрайт")
+    elif order == 10:
         customize_item("Шейк")
-
-def payment():
-    total_price_value = total_price()
-    print("Вы купили товаров на сумму: ", total_price_value)
-    print('\n Введите способ оплаты:\n 1 - по карте \n 2 - наличными ')
-    payment_method = int(input())
-    if payment_method == 2:
-        cash_payment = int(input("Введите сумму оплаты наличными: "))
-        if cash_payment > total_price_value:
-            print("Вот ваша сдача:", cash_payment - total_price_value)
-            print("Спасибо за покупку")
-        elif cash_payment == total_price_value:
-            print("Спасибо за покупку")
-        else:
-            print("Вы дали недостаточную сумму для оплаты заказа")
-    elif payment_method == 1:
-        print("Спасибо за покупку")
-    else:
-        print("Некорректный ввод способа оплаты")
-
-def cart():
-    total_price_value = total_price()
-    addon_price = 0
-    for item in Basket:
-        if isinstance(item, tuple):
-            item_name, *customizations = item
-            print(f"{item_name}:", end=" ")
-            if customizations:
-                if item_name == "Шейк":
-                    print(f"Вкус: {customizations[0]}", end=" ")
-                    print("Ингредиенты:", end=" ")
-                    for ingredient in customizations[1]:
-                        print(f"{ingredient[0]} ({ingredient[1]} руб.)", end=", ")
-                        addon_price += ingredient[1]
-                else:
-                    print("Ингредиенты:", end=" ")
-                    for ingredient in customizations[0]:
-                        print(f"{ingredient[0]} ({ingredient[1]} руб.)", end=", ")
-                        addon_price += ingredient[1]
-            print()
-        else:
-            print(f"{item}: {Basket.count(item)} - {Basket.count(item) * prise_menu[list_menu.index(item)]}")
-    print(f"Итоговая сумма заказа: {total_price_value}")
-    if addon_price != 0:
-        print(f"Стоимость добавленных ингредиентов: {addon_price}")
+    elif order == 11:
+        customize_fries_soda_nuggets("Крылышки")
+    elif order == 12:
+        customize_fries_soda_nuggets("Ножки")
+    elif order == 13:
+        customize_fries_soda_nuggets("Нагетсы")
+    elif order == 14:
+        customize_sauces("Соус")
 
 while True:
     print(menu())
-    Action_selection = int(input("Введите номер желаемого действия: "))
-
-    if Action_selection == 1:
+    choice = int(input("Введите номер желаемого действия: "))
+    if choice == 1:
         go_to_order()
-    elif Action_selection == 2:
-        payment()
-    elif Action_selection == 3:
+    elif choice == 2:
+        print(f"Общая сумма: {total_price()} руб.")
+    elif choice == 3:
         cart()
-    elif Action_selection == 4:
-        print("Спасибо за заказ!")
+    elif choice == 4:
+        print("Спасибо за заказ! До свидания!")
         break
     else:
-        print("Некорректный ввод")
+        print("Неверный номер действия. Попробуйте снова.")
