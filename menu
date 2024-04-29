@@ -1,163 +1,161 @@
-import tkinter as tk
-from tkinter import messagebox
-
 Basket = []
 list_menu = ["Гамбургер", "Чизбургер", "Картофель фри", "Кока-кола", "Шейк"]
-prices = [150, 120, 80, 100, 250]
-ingredients = {
-    "Гамбургер": ["Котлета", "Помидор", "Лук", "Соус", "Соленые огурчики"],
-    "Чизбургер": ["Котлета", "Сыр", "Помидор", "Лук", "Соус", "Соленые огурчики"],
-    "Картофель фри": ["Картофель", "Масло"],
-    "Кока-кола": ["Вода", "Сахар", "Углекислота", "Краситель"],
-    "Шейк": ["Молоко", "Мороженое", "Сироп"]
-}
+prise_menu = [150, 150, 80, 100, 250]
+burger_ingredients = [["Котлета", 40], ["Сыр", 30], ["Салат", 10], ["Соус", 20], ["Помидор", 15]]
+cheeseburger_ingredients = [["Котлета", 40], ["Сыр", 90], ["Салат", 10], ["Соус", 20]]
+shake_ingredients = [["Молоко", 10], ["Сироп", 15], ["Шоколад", 20], ["Орехи", 25]]
+sizes = {"Маленький": -20, "Средний": 0, "Большой": 20}
+shake_flavors = ["Классический", "Шоколадный", "Ванильный"]
 
 def total_price():
     total_price = 0
-    for item, price in zip(list_menu, prices):
-        total_price += Basket.count(item) * price
+    for item in Basket:
+        if isinstance(item, tuple):
+            item_name, *customizations = item
+            if item_name == "Гамбургер":
+                total_price += prise_menu[list_menu.index(item_name)]
+                if customizations:
+                    for ingredient in customizations[0]:
+                        total_price += ingredient[1]
+            elif item_name == "Чизбургер":
+                total_price += prise_menu[list_menu.index(item_name)]
+                if customizations:
+                    for ingredient in customizations[0]:
+                        total_price += ingredient[1]
+            elif item_name == "Шейк":
+                total_price += prise_menu[list_menu.index("Шейк")]
+                if customizations:
+                    for ingredient in customizations[1]:
+                        total_price += ingredient[1]
+            else:
+                index = list_menu.index(item_name)
+                total_price += prise_menu[index]
+                if customizations:
+                    total_price += customizations[2]
+        else:
+            index = list_menu.index(item)
+            total_price += Basket.count(item) * prise_menu[index]
     return total_price
 
-def go_to_order(parent):
-    parent.title("Меню заказа")
-    for widget in parent.winfo_children():
-        widget.destroy()
+def menu():
+    menu_options = ("\n 1 - Перейти к меню "
+                    "\n 2 - Оплата"
+                    "\n 3 - Корзина"
+                    "\n 4 - Выход")
+    return menu_options
 
-    order_label = tk.Label(parent, text="Выберите товар, который желаете заказать:")
-    order_label.pack()
+def customize_item(item_name):
+    selected_ingredients = []
+    if item_name == "Гамбургер":
+        ingredients_list = burger_ingredients
+    elif item_name == "Чизбургер":
+        ingredients_list = cheeseburger_ingredients
+    elif item_name == "Шейк":
+        ingredients_list = shake_ingredients
+        selected_flavor = input("Выберите вкус шейка (Классический, Шоколадный, Ванильный): ")
+        if selected_flavor not in shake_flavors:
+            print("Неверный вкус шейка.")
+            return
 
-    cart_frame = tk.Frame(parent)
-    cart_frame.pack()
+    for i, ingredient in enumerate(ingredients_list):
+        print(f"{i+1} - {ingredient[0]} ({ingredient[1]} руб.)")
+    ingredient_indices = input("Введите номера ингредиентов через запятую: ").split(",")
+    for index_str in ingredient_indices:
+        index = int(index_str.strip())
+        if 1 <= index <= len(ingredients_list):
+            selected_ingredients.append(ingredients_list[index - 1])
 
-    cart_label = tk.Label(cart_frame, text="Корзина:")
-    cart_label.pack()
-
-    cart_items = []
-    for i, item in enumerate(list_menu):
-        item_count = Basket.count(item)
-        item_frame = tk.Frame(cart_frame)
-        item_frame.pack()
-        item_label = tk.Label(item_frame, text=f"{i+1} - {item} ({prices[i]} рублей)")
-        item_label.pack(side=tk.LEFT)
-        decrease_button = tk.Button(item_frame, text="-", command=lambda x=item: remove_from_basket(x, parent))
-        decrease_button.pack(side=tk.LEFT)
-        increase_button = tk.Button(item_frame, text="+", command=lambda x=item: add_to_basket(x, parent))
-        increase_button.pack(side=tk.LEFT)
-        item_count_label = tk.Label(item_frame, text=f"Количество: {item_count}")
-        item_count_label.pack(side=tk.LEFT)
-
-    total_price_label = tk.Label(cart_frame, text=f"Общая сумма: {total_price()} рублей")
-    total_price_label.pack()
-
-    payment_button = tk.Button(parent, text="Оплата", command=lambda: payment(parent))
-    payment_button.pack()
-
-    back_button = tk.Button(parent, text="Выход", command=parent.quit)
-    back_button.pack()
-
-def add_to_basket(item, parent):
-    Basket.append(item)
-    messagebox.showinfo("Корзина", f"{item} добавлен в корзину!")
-    go_to_order(parent)
-
-def remove_from_basket(item, parent):
-    if item in Basket:
-        Basket.remove(item)
-        messagebox.showinfo("Корзина", f"{item} удален из корзины!")
+    if item_name == "Шейк":
+        Basket.append((item_name, selected_flavor, selected_ingredients))
     else:
-        messagebox.showerror("Ошибка", f"{item} не находится в корзине.")
-    go_to_order(parent)
+        Basket.append((item_name, selected_ingredients))
 
-def payment(parent):
-    parent.title("Окно оплаты")
-    for widget in parent.winfo_children():
-        widget.destroy()
+def customize_fries_soda(item_name):
+    for i, size in enumerate(sizes):
+        print(f"{i+1} - {size} ({sizes[size]} руб.)")
+    size_choice = int(input("Введите номер размера: "))
+    if 1 <= size_choice <= len(sizes):
+        size_name = list(sizes.keys())[size_choice - 1]
+        size_price = sizes[size_name]
+        Basket.append((item_name, size_name, size_price))
 
+def go_to_order():
+    menu_items = ("\n 1 - Гамбургер"
+                  "\n 2 - Чизбургер"
+                  "\n 3 - Картофель фри"
+                  "\n 4 - Кока-кола"
+                  "\n 5 - Шейк")
+    print(menu_items)
+    order = int(input("Введите цифру товара который желаете заказать: "))
+
+    if order == 1:
+        customize_item("Гамбургер")
+    elif order == 2:
+        customize_item("Чизбургер")
+    elif order == 3:
+        customize_fries_soda("Картофель фри")
+    elif order == 4:
+        customize_fries_soda("Кока-кола")
+    elif order == 5:
+        customize_item("Шейк")
+
+def payment():
     total_price_value = total_price()
-    payment_label = tk.Label(parent, text=f"Вы купили товаров на сумму: {total_price_value} рублей")
-    payment_label.pack()
-
-    payment_method_label = tk.Label(parent, text="Выберите способ оплаты:")
-    payment_method_label.pack()
-
-    card_button = tk.Button(parent, text="По карте", command=lambda: pay_by_card(parent))
-    card_button.pack()
-
-    cash_button = tk.Button(parent, text="Наличными", command=lambda: pay_cash(parent))
-    cash_button.pack()
-
-    back_button = tk.Button(parent, text="Назад", command=lambda: go_to_order(parent))
-    back_button.pack()
-
-def pay_by_card(parent):
-    parent.title("Оплата картой")
-    for widget in parent.winfo_children():
-        widget.destroy()
-
-    card_label = tk.Label(parent, text="Введите данные карты:")
-    card_label.pack()
-
-    card_number_label = tk.Label(parent, text="Номер карты:")
-
-    card_number_label.pack()
-    card_number_entry = tk.Entry(parent)
-    card_number_entry.pack()
-
-    expiry_date_label = tk.Label(parent, text="Срок действия (ММ/ГГ):")
-    expiry_date_label.pack()
-    expiry_date_entry = tk.Entry(parent)
-    expiry_date_entry.pack()
-
-    cvv_label = tk.Label(parent, text="CVV:")
-    cvv_label.pack()
-    cvv_entry = tk.Entry(parent, show="*")
-    cvv_entry.pack()
-
-    pay_button = tk.Button(parent, text="Оплатить",
-                           command=lambda: process_card_payment(card_number_entry.get(), expiry_date_entry.get(),
-                                                                cvv_entry.get()))
-    pay_button.pack()
-
-    back_button = tk.Button(parent, text="Назад", command=lambda: payment(parent))
-    back_button.pack()
-
-
-def process_card_payment(card_number, expiry_date, cvv):
-    messagebox.showinfo("Оплата", "Спасибо за покупку!")
-    Basket.clear()
-
-
-def pay_cash(parent):
-    parent.title("Оплата наличными")
-    for widget in parent.winfo_children():
-        widget.destroy()
-
-    total_price_value = total_price()
-    cash_amount = tk.IntVar()
-    cash_label = tk.Label(parent, text=f"Введите сумму оплаты наличными (Итого: {total_price_value} рублей):")
-    cash_label.pack()
-    cash_entry = tk.Entry(parent, textvariable=cash_amount)
-    cash_entry.pack()
-    pay_button = tk.Button(parent, text="Оплатить", command=lambda: process_cash_payment(cash_amount.get()))
-    pay_button.pack()
-    back_button = tk.Button(parent, text="Назад", command=lambda: payment(parent))
-    back_button.pack()
-
-
-def process_cash_payment(cash_amount):
-    total_price_value = total_price()
-    if cash_amount > total_price_value:
-        change = cash_amount - total_price_value
-        messagebox.showinfo("Оплата", f"Спасибо за покупку! Вот ваша сдача: {change} рублей.")
-        Basket.clear()
-    elif cash_amount == total_price_value:
-        messagebox.showinfo("Оплата", "Спасибо за покупку!")
-        Basket.clear()
+    print("Вы купили товаров на сумму: ", total_price_value)
+    print('\n Введите способ оплаты:\n 1 - по карте \n 2 - наличными ')
+    payment_method = int(input())
+    if payment_method == 2:
+        cash_payment = int(input("Введите сумму оплаты наличными: "))
+        if cash_payment > total_price_value:
+            print("Вот ваша сдача:", cash_payment - total_price_value)
+            print("Спасибо за покупку")
+        elif cash_payment == total_price_value:
+            print("Спасибо за покупку")
+        else:
+            print("Вы дали недостаточную сумму для оплаты заказа")
+    elif payment_method == 1:
+        print("Спасибо за покупку")
     else:
-        messagebox.showerror("Ошибка", "Вы дали недостаточную сумму для оплаты заказа.")
+        print("Некорректный ввод способа оплаты")
 
+def cart():
+    total_price_value = total_price()
+    addon_price = 0
+    for item in Basket:
+        if isinstance(item, tuple):
+            item_name, *customizations = item
+            print(f"{item_name}:", end=" ")
+            if customizations:
+                if item_name == "Шейк":
+                    print(f"Вкус: {customizations[0]}", end=" ")
+                    print("Ингредиенты:", end=" ")
+                    for ingredient in customizations[1]:
+                        print(f"{ingredient[0]} ({ingredient[1]} руб.)", end=", ")
+                        addon_price += ingredient[1]
+                else:
+                    print("Ингредиенты:", end=" ")
+                    for ingredient in customizations[0]:
+                        print(f"{ingredient[0]} ({ingredient[1]} руб.)", end=", ")
+                        addon_price += ingredient[1]
+            print()
+        else:
+            print(f"{item}: {Basket.count(item)} - {Basket.count(item) * prise_menu[list_menu.index(item)]}")
+    print(f"Итоговая сумма заказа: {total_price_value}")
+    if addon_price != 0:
+        print(f"Стоимость добавленных ингредиентов: {addon_price}")
 
-root = tk.Tk()
-root.title("Ресторан")
-go_to_order(root)
-root.mainloop()
+while True:
+    print(menu())
+    Action_selection = int(input("Введите номер желаемого действия: "))
+
+    if Action_selection == 1:
+        go_to_order()
+    elif Action_selection == 2:
+        payment()
+    elif Action_selection == 3:
+        cart()
+    elif Action_selection == 4:
+        print("Спасибо за заказ!")
+        break
+    else:
+        print("Некорректный ввод")
