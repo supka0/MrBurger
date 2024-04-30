@@ -1,10 +1,10 @@
 from collections import namedtuple
 
-# Определение именованных кортежей для хранения данных о меню и ингредиентах
+
 MenuItem = namedtuple('MenuItem', 'name price')
 Ingredient = namedtuple('Ingredient', 'name price')
 
-# Списки данных о меню и ингредиентах
+
 menu_items = [
     MenuItem('Гамбургер', 120), MenuItem('Чизбургер', 180),
     MenuItem('Двойной Гамбургер', 240), MenuItem('Двойной Чизбургер', 360),
@@ -166,7 +166,10 @@ def print_basket():
     for item_name, customizations in basket:
         item_price = get_item_price(item_name)
         customization_cost = get_customization_cost(customizations)
-        total_cost += item_price + customization_cost
+        current_item_cost = customization_cost
+        if item_price is not None:
+            current_item_cost += item_price
+        total_cost += current_item_cost
         print(f'- {item_name}', end='')
         if item_price is not None:
             print(f' ({item_price})', end='')
@@ -186,20 +189,26 @@ def print_basket():
 
 
 def process_payment(total_cost):
-    while True:
-        payment_amount = input(f'Внесите сумму не менее {total_cost} руб. (или введите "отмена" для выхода): ')
-        if payment_amount.lower() == 'отмена':
-            return False
-        try:
-            payment_amount = float(payment_amount)
-            if payment_amount >= total_cost:
-                change = payment_amount - total_cost
-                print(f'Спасибо за оплату! Ваша сдача: {change:.2f} руб.')
-                return True
-            else:
-                print(f'Недостаточно средств. Требуется еще {total_cost - payment_amount:.2f} руб.')
-        except ValueError:
-            print('Неверный формат суммы. Попробуйте снова.')
+    total_cost = sum(get_item_price(item) + get_customization_cost(customizations) if get_item_price(item) is not None else get_customization_cost(customizations) for item, customizations in basket)
+    if total_cost > 0:
+        while True:
+            payment_amount = input(f'Внесите сумму не менее {total_cost} руб. (или введите "отмена" для выхода): ')
+            if payment_amount.lower() == 'отмена':
+                return False
+            try:
+                payment_amount = float(payment_amount)
+                if payment_amount >= total_cost:
+                    change = payment_amount - total_cost
+                    print(f'Спасибо за оплату! Ваша сдача: {change:.2f} руб.')
+                    basket.clear()
+                    return True
+                else:
+                    print(f'Недостаточно средств. Требуется еще {total_cost - payment_amount:.2f} руб.')
+            except ValueError:
+                print('Неверный формат суммы. Попробуйте снова.')
+    else:
+        print('Корзина пуста. Добавьте блюда в корзину для оформления заказа.')
+        return False
 
 
 def main():
@@ -218,11 +227,7 @@ def main():
             break
         elif choice == '0':
             print_basket()
-            if basket:
-                total_cost = sum(get_item_price(item) + get_customization_cost(customizations) for item, customizations in basket)
-                if process_payment(total_cost):
-                    basket.clear()
-                    print('Заказ оплачен. Спасибо за покупку!')
+            process_payment(0)
         elif choice.isdigit() and 1 <= int(choice) <= len(menu_items):
             item_name = menu_items[int(choice)-1].name
             customize_item(item_name)
