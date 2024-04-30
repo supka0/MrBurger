@@ -1,68 +1,39 @@
+import json
 from collections import namedtuple
 
+with open('menu.json', 'r', encoding='utf-8') as file:
+    data = json.load(file)
 
 MenuItem = namedtuple('MenuItem', 'name price')
 Ingredient = namedtuple('Ingredient', 'name price')
 
+menu_items = []
+for item in data['menu_items']:
+    name = item['name']
+    price = item.get('price')
+    menu_items.append(MenuItem(name, price))
 
-menu_items = [
-    MenuItem('Гамбургер', 120), MenuItem('Чизбургер', 180),
-    MenuItem('Двойной Гамбургер', 240), MenuItem('Двойной Чизбургер', 360),
-    MenuItem('Крабсбургер', 110), MenuItem('Картофель фри', 50),
-    MenuItem('Кока-кола', 70), MenuItem('Фанта', 60),
-    MenuItem('Спрайт', 50), MenuItem('Шейк', 100),
-    MenuItem('Крылышки', 80), MenuItem('Ножки', 90),
-    MenuItem('Нагетсы', 20), MenuItem('Соус', None)
-]
-
-burger_ingredients = [
-    Ingredient('Котлета', 40), Ingredient('Сыр', 30),
-    Ingredient('Салат', 10), Ingredient('Соус', 20),
-    Ingredient('Помидор', 15)
-]
-
-double_burger_ingredients = [
-    Ingredient('Двойная Котлета', 80), Ingredient('Сыр', 30),
-    Ingredient('Салат', 10), Ingredient('Соус', 20),
-    Ingredient('Помидор', 15)
-]
-
-cheeseburger_ingredients = [
-    Ingredient('Котлета', 40), Ingredient('Тройной Сыр', 90),
-    Ingredient('Салат', 10), Ingredient('Соус', 20)
-]
-
-double_cheeseburger_ingredients = [
-    Ingredient('Двойная Котлета', 80), Ingredient('Тройной Сыр', 90),
-    Ingredient('Салат', 10), Ingredient('Соус', 20)
-]
-
-crabsburger_ingredients = [
-    Ingredient('Крабовые палочки', 50), Ingredient('Салат', 10),
-    Ingredient('Соус', 20), Ingredient('Помидор', 15)
-]
-
-shake_ingredients = [
-    Ingredient('Молоко', 10), Ingredient('Сироп', 15),
-    Ingredient('Шоколад', 20), Ingredient('Орехи', 25)
-]
-
-shake_flavors = ['Классический', 'Шоколадный', 'Ванильный', 'Клубничный', 'Банановый']
-sauces = ['Кетчуп', 'Чесночный', 'Барбекю', 'Сырный', 'Ранч', 'Кисло-сладкий']
-
-sizes = {'Маленький': -20, 'Средний': 0, 'Большой': 20}
+burger_ingredients = [Ingredient(item['name'], item['price']) for item in data['burger_ingredients']]
+double_burger_ingredients = [Ingredient(item['name'], item['price']) for item in data['double_burger_ingredients']]
+cheeseburger_ingredients = [Ingredient(item['name'], item['price']) for item in data['cheeseburger_ingredients']]
+double_cheeseburger_ingredients = [Ingredient(item['name'], item['price']) for item in data['double_cheeseburger_ingredients']]
+crabsburger_ingredients = [Ingredient(item['name'], item['price']) for item in data['crabsburger_ingredients']]
+shake_ingredients = [Ingredient(item['name'], item['price']) for item in data['shake_ingredients']]
+shake_flavors = data['shake_flavors']
+sauces = data['sauces']
+sizes = data['sizes']
 
 basket = []
+
+
 
 
 def add_to_basket(item_name, customizations=None):
     basket.append((item_name, customizations))
 
-
 def get_item_price(item_name):
     item = next((item for item in menu_items if item.name == item_name), None)
     return item.price if item is not None else 0
-
 
 def get_customization_cost(customizations):
     cost = 0
@@ -73,7 +44,6 @@ def get_customization_cost(customizations):
         cost += sum(20 if sauce else 0 for sauce in sauces)
         cost += 20 if flavor and flavor != 'Классический' else 0
     return cost
-
 
 def customize_item(item_name):
     ingredients = get_ingredients(item_name)
@@ -98,7 +68,6 @@ def customize_item(item_name):
     customizations = (selected_ingredients, size, sauces, flavor)
     add_to_basket(item_name, customizations)
 
-
 def get_ingredients(item_name):
     if item_name == 'Гамбургер':
         return burger_ingredients
@@ -114,7 +83,6 @@ def get_ingredients(item_name):
         return shake_ingredients
     return []
 
-
 def select_ingredients(ingredients):
     print('Выберите ингредиенты (введите номера через запятую):')
     for i, ingredient in enumerate(ingredients, 1):
@@ -126,16 +94,17 @@ def select_ingredients(ingredients):
     print(f'Стоимость добавочных ингредиентов: {sum(ingr.price for ingr in selected_ingredients)} руб.')
     return selected_ingredients
 
-
 def select_size(item_name):
     print('Выберите размер порции:')
     for i, (size, price) in enumerate(sizes.items(), 1):
         print(f'{i}. {size} ({price} руб.)')
     choice = input('Введите номер размера: ')
-    selected_size = list(sizes.keys())[int(choice)-1] if choice.isdigit() else 'Средний'
+    if choice.isdigit():
+        selected_size = list(sizes.keys())[int(choice)-1]
+    else:
+        selected_size = 'Средний'
     print(f'Выбранный размер: {selected_size} ({sizes[selected_size]} руб.)')
     return selected_size
-
 
 def select_sauces(item_name):
     print('Выберите соусы (введите номера через запятую):')
@@ -148,17 +117,18 @@ def select_sauces(item_name):
     print(f'Стоимость соусов: {sum(20 if sauce else 0 for sauce in selected_sauces)} руб.')
     return selected_sauces
 
-
 def select_shake_flavor(item_name):
     print('Выберите вкус шейка:')
     for i, flavor in enumerate(shake_flavors, 1):
         print(f'{i}. {flavor} ({20 if flavor != "Классический" else 0} руб.)')
     choice = input('Введите номер вкуса: ')
-    selected_flavor = shake_flavors[int(choice)-1] if choice.isdigit() else None
+    if choice.isdigit():
+        selected_flavor = shake_flavors[int(choice)-1]
+    else:
+        selected_flavor = None
     if selected_flavor:
         print(f'Выбранный вкус: {selected_flavor} ({20 if selected_flavor != "Классический" else 0} руб.)')
     return selected_flavor
-
 
 def print_basket():
     total_cost = 0
@@ -187,7 +157,6 @@ def print_basket():
                 print(f'   Вкус: {flavor} ({20 if flavor != "Классический" else 0} руб.)')
     print(f'Итоговая стоимость: {total_cost} руб.')
 
-
 def process_payment(total_cost):
     total_cost = sum(get_item_price(item) + get_customization_cost(customizations) if get_item_price(item) is not None else get_customization_cost(customizations) for item, customizations in basket)
     if total_cost > 0:
@@ -210,16 +179,14 @@ def process_payment(total_cost):
         print('Корзина пуста. Добавьте блюда в корзину для оформления заказа.')
         return False
 
-
 def main():
     while True:
         print('Меню:')
         for i, item in enumerate(menu_items, 1):
-            print(f'{i}. {item.name}', end='')
-            if item.price is not None:
-                print(f' ({item.price})')
+            if item.price is None:
+                print(f'{i}. {item.name}')
             else:
-                print()
+                print(f'{i}. {item.name} ({item.price}) руб.')
         print('0. Просмотр корзины')
         print('q. Выход')
         choice = input('Введите номер пункта меню: ').lower()
