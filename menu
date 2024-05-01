@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 
-# Загрузка данных из JSON файла
+
 with open('menu.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
@@ -52,7 +52,7 @@ def get_customization_cost(customizations):
         cost += 20 if flavor and flavor != 'Классический' else 0
     return cost
 
-# Функции для выбора ингредиентов, соусов, размеров и вкусов
+
 def select_ingredients(ingredients):
     selected_ingredients = []
     ingredient_window = tk.Toplevel(root)
@@ -152,27 +152,108 @@ def select_shake_flavor(shake_flavors):
     return flavor_var.get()
 
 def customize_item(item_name):
-    ingredients = get_ingredients(item_name)
-    size = None
-    sauces = []
-    flavor = None
+    customize_window = tk.Toplevel(root)
+    customize_window.title(f'Кастомизация {item_name}')
 
-    if ingredients:
-        selected_ingredients = select_ingredients(ingredients)
+    frame = ttk.Frame(customize_window)
+    frame.pack(padx=10, pady=10)
+
+    ingredients_label = ttk.Label(frame, text='Выберите ингредиенты:')
+    ingredients_label.pack(anchor='w')
+
+    ingredients_frame = ttk.Frame(frame)
+    ingredients_frame.pack(anchor='w')
+
+    selected_ingredients = []
+    if item_name in ['Гамбургер', 'Чизбургер', 'Двойной Гамбургер', 'Двойной Чизбургер', 'Крабсбургер']:
+        ingredients = [burger_ingredients, cheeseburger_ingredients, double_burger_ingredients, double_cheeseburger_ingredients, crabsburger_ingredients][['Гамбургер', 'Чизбургер', 'Двойной Гамбургер', 'Двойной Чизбургер', 'Крабсбургер'].index(item_name)]
+    elif item_name == 'Шейк':
+        ingredients = shake_ingredients
     else:
-        selected_ingredients = []
+        ingredients = []
 
-    if item_name in ['Картофель фри', 'Кока-кола', 'Фанта', 'Спрайт', 'Крылышки', 'Ножки', 'Нагетсы', 'Соус']:
-        sauces = select_sauces(sauces)
+    ingredient_vars = []
+    for ingredient in ingredients:
+        var = tk.BooleanVar()
+        ingredient_vars.append(var)
+        ingredient_checkbox = ttk.Checkbutton(ingredients_frame, text=f'{ingredient.name} ({ingredient.price} руб.)', variable=var, onvalue=True, offvalue=False)
+        ingredient_checkbox.pack(anchor='w')
 
+    size_label = ttk.Label(frame, text='Выберите размер:')
+    size_var = tk.StringVar()
+    size_options = ['Маленький', 'Средний', 'Большой']
     if item_name in ['Картофель фри', 'Кока-кола', 'Фанта', 'Спрайт', 'Крылышки', 'Ножки', 'Нагетсы']:
-        size = select_size(sizes)
+        size_label.pack(anchor='w')
+        size_dropdown = ttk.Combobox(frame, textvariable=size_var, values=size_options, state='readonly')
+        size_dropdown.pack(anchor='w')
+    else:
+        size_dropdown = None
 
+    sauce_label = ttk.Label(frame, text='Выберите соусы:')
+    sauce_vars = []
+    sauce_checkboxes = []
+    if item_name in ['Картофель фри', 'Крылышки', 'Ножки', 'Нагетсы', 'Соус']:
+        sauce_label.pack(anchor='w')
+        sauce_frame = ttk.Frame(frame)
+        sauce_frame.pack(anchor='w')
+        for sauce in sauces:
+            var = tk.BooleanVar()
+            sauce_vars.append(var)
+            sauce_checkbox = ttk.Checkbutton(sauce_frame, text=sauce, variable=var, onvalue=True, offvalue=False)
+            sauce_checkbox.pack(anchor='w', side='left')
+            sauce_checkboxes.append(sauce_checkbox)
+    else:
+        sauce_frame = None
+
+    flavor_label = ttk.Label(frame, text='Выберите вкус:')
+    flavor_var = tk.StringVar()
     if item_name == 'Шейк':
-        flavor = select_shake_flavor(shake_flavors)
+        flavor_label.pack(anchor='w')
+        flavor_dropdown = ttk.Combobox(frame, textvariable=flavor_var, values=shake_flavors, state='readonly')
+        flavor_dropdown.pack(anchor='w')
+    else:
+        flavor_dropdown = None
 
-    customizations = (selected_ingredients, size, sauces, flavor)
-    add_to_basket(item_name, customizations)
+    def add_to_basket():
+        selected = [ingredients[i] for i, var in enumerate(ingredient_vars) if var.get()]
+        selected_ingredients.extend(selected)
+        selected_size = size_var.get() if size_dropdown else None
+        selected_sauces = [sauces[i] for i, var in enumerate(sauce_vars) if var.get()] if sauce_frame else []
+        selected_flavor = flavor_var.get() if flavor_dropdown else None
+        basket.append((item_name, (selected_ingredients, selected_size, selected_sauces, selected_flavor), get_item_price(item_name)))
+        customize_window.destroy()
+
+    add_button = ttk.Button(frame, text='Добавить в корзину', command=add_to_basket)
+    add_button.pack(pady=10)
+
+    root.wait_window(customize_window)
+
+    def add_to_basket():
+        selected = [ingredients[i] for i, var in enumerate(ingredient_vars) if var.get()]
+        selected_ingredients.extend(selected)
+        selected_size = size_var.get() if size_dropdown else None
+        selected_sauces = [sauces[i] for i, var in enumerate(sauce_vars) if var.get()] if sauce_frame else []
+        selected_flavor = flavor_var.get() if flavor_dropdown else None
+        basket.append((item_name, (selected_ingredients, selected_size, selected_sauces, selected_flavor), get_item_price(item_name)))
+        customize_window.destroy()
+
+    add_button = ttk.Button(frame, text='Добавить в корзину', command=add_to_basket)
+    add_button.pack(pady=10)
+
+    root.wait_window(customize_window)
+
+
+    def add_to_basket():
+        selected = [ingredients[i] for i, var in enumerate(ingredient_vars) if var.get()]
+        selected_ingredients.extend(selected)
+        basket.append((item_name, (selected_ingredients, None, [], None), get_item_price(item_name)))
+        customize_window.destroy()
+
+    add_button = ttk.Button(frame, text='Добавить в корзину', command=add_to_basket)
+    add_button.pack(pady=10)
+
+    root.wait_window(customize_window)
+
 
 def get_ingredients(item_name):
     if item_name == 'Гамбургер':
@@ -189,7 +270,7 @@ def get_ingredients(item_name):
         return shake_ingredients
     return []
 
-# Функция для генерации комбо
+
 def generate_combos(burgers, drinks, snacks, preferences=None):
     all_burgers = [item.name for item in menu_items if item.name in burgers]
     all_drinks = [item.name for item in menu_items if item.name in drinks]
@@ -215,7 +296,6 @@ def generate_combos(burgers, drinks, snacks, preferences=None):
     combos.sort(key=lambda x: x[1])
     return combos
 
-# Функция для выбора комбо
 
 def select_combo():
     global max_burgers, max_drinks, max_snacks
@@ -310,8 +390,6 @@ def select_combo():
     root.wait_window(combo_window)
 
 
-
-# Функция для вывода корзины
 def print_basket():
     basket_window = tk.Toplevel(root)
     basket_window.title('Корзина')
@@ -333,10 +411,12 @@ def print_basket():
             if customizations:
                 ingredients, size, sauces, flavor = customizations
                 if ingredients:
-                    ingredient_label = ttk.Label(basket_frame, text='   Ингредиенты: ' + ', '.join(
-                        f'{ingr.name} ({ingr.price} руб.)' for ingr in ingredients))
+                    ingredient_label = ttk.Label(basket_frame, text='   Ингредиенты:')
                     ingredient_label.pack(anchor='w')
-                    total_cost += sum(ingr.price for ingr in ingredients)
+                    for ingr in ingredients:
+                        ingr_label = ttk.Label(basket_frame, text=f'     {ingr.name} ({ingr.price} руб.)')
+                        ingr_label.pack(anchor='w')
+                        total_cost += ingr.price
                 if size:
                     size_price = sizes.get(size, 0)
                     size_label = ttk.Label(basket_frame, text=f'   Размер: {size} ({size_price} руб.)')
@@ -362,7 +442,7 @@ def print_basket():
     checkout_button.pack(pady=10)
 
 
-# Функция для обработки оплаты
+
 def process_payment(discount):
     total_cost = sum(item_cost + get_customization_cost(customizations) for _, customizations, item_cost in basket)
     combo_cost = sum(item_cost for item_name, customizations, item_cost in basket if item_name == "Комбо")
@@ -397,10 +477,10 @@ def process_payment(discount):
     root.wait_window(payment_window)
 
 
-# Функция для основного меню
+
 def main_menu():
-    menu_window = tk.Toplevel(root)
-    menu_window.title('Меню')
+    menu_window = tk.Toplevel(root.winfo_toplevel())
+    menu_window.title("Мистер Бургер")
 
     menu_frame = ttk.Frame(menu_window)
     menu_frame.pack(padx=10, pady=10)
@@ -431,14 +511,8 @@ def main_menu():
     exit_button = ttk.Button(actions_frame, text='Выход', command=root.quit)
     exit_button.pack(padx=5, pady=5)
 
-    root.wait_window(menu_window)
 
-
-# Создание главного окна
 root = tk.Tk()
-root.title('Ресторан')
-
+root.withdraw()
 main_menu()
-
 root.mainloop()
-
