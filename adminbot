@@ -1,3 +1,5 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
 import json
 import string
 import random
@@ -11,12 +13,9 @@ def generate_unique_id():
 
 def process_applications():
     for application in applications[:]:
-        print(json.dumps(application, indent=2, ensure_ascii=False))
-        response = input("Принять или отклонить (принять/отклонить)? ").lower()
-        if response == "отклонить":
-            applications.remove(application)
-            save_applications()
-        elif response == "принять":
+        application_str = json.dumps(application, indent=2, ensure_ascii=False)
+        response = messagebox.askquestion("Рассмотрение заявки", f"Заявка:\n{application_str}\n\nПринять или отклонить?")
+        if response == "yes":
             applications.remove(application)
             save_applications()
             new_worker = {
@@ -26,50 +25,50 @@ def process_applications():
             }
             workers.append(new_worker)
             save_workers()
-        else:
-            print("Неверный ввод, пожалуйста, попробуйте снова.")
+        elif response == "no":
+            applications.remove(application)
+            save_applications()
 
 def manage_workers():
-    choice = input("Уволить работника или повысить (уволить/повысить)? ").lower()
-    if choice == "уволить":
-        worker_id = input("Введите ID работника для увольнения: ")
+    worker_id = simpledialog.askstring("Уволить работника", "Введите ID работника для увольнения:")
+    if worker_id:
         for worker in workers:
             if worker['id'] == worker_id:
                 workers.remove(worker)
                 save_workers()
-                print(f"Работник с ID {worker_id} уволен.")
+                messagebox.showinfo("Успех", f"Работник с ID {worker_id} уволен.")
                 break
         else:
-            print(f"Работник с ID {worker_id} не найден.")
-    elif choice == "повысить":
-        promote_worker()
-    else:
-        print("Неверный ввод, пожалуйста, попробуйте снова.")
+            messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
 
 def promote_worker():
-    worker_id = input("Введите ID работника для повышения: ")
-    for worker in workers:
-        if worker['id'] == worker_id:
-            if worker['title'] == "Младший кассир":
-                worker['title'] = "Старший кассир"
-                save_workers()
-                print(f"Работник с ID {worker_id} повышен до Старшего кассира.")
-            elif worker['title'] == "Старший кассир":
-                worker['title'] = "Менеджер"
-                save_workers()
-                print(f"Работник с ID {worker_id} повышен до Менеджера.")
-            else:
-                print(f"Работник с ID {worker_id} уже является Менеджером, дальнейшее повышение невозможно.")
-            break
-    else:
-        print(f"Работник с ID {worker_id} не найден.")
+    worker_id = simpledialog.askstring("Повысить работника", "Введите ID работника для повышения:")
+    if worker_id:
+        for worker in workers:
+            if worker['id'] == worker_id:
+                if worker['title'] == "Младший кассир":
+                    worker['title'] = "Старший кассир"
+                    save_workers()
+                    messagebox.showinfo("Успех", f"Работник с ID {worker_id} повышен до Старшего кассира.")
+                elif worker['title'] == "Старший кассир":
+                    worker['title'] = "Менеджер"
+                    save_workers()
+                    messagebox.showinfo("Успех", f"Работник с ID {worker_id} повышен до Менеджера.")
+                else:
+                    messagebox.showerror("Ошибка", f"Работник с ID {worker_id} уже является Менеджером, дальнейшее повышение невозможно.")
+                break
+        else:
+            messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
 
 def add_menu_item():
-    name = input("Введите название блюда: ")
-    price = input("Введите цену блюда: ")
-    new_item = {"name": name, "price": int(price)}
-    menu_data["menu_items"].append(new_item)
-    save_menu_data()
+    name = simpledialog.askstring("Добавить блюдо", "Введите название блюда:")
+    if name:
+        price = simpledialog.askinteger("Добавить блюдо", "Введите цену блюда:")
+        if price is not None:
+            new_item = {"name": name, "price": price}
+            menu_data["menu_items"].append(new_item)
+            save_menu_data()
+            messagebox.showinfo("Успех", f"Блюдо '{name}' добавлено в меню по цене {price}.")
 
 def save_workers():
     with open("workers.json", "w", encoding="utf-8") as file:
@@ -82,7 +81,6 @@ def save_applications():
 def save_menu_data():
     with open("menu.json", "w", encoding="utf-8") as file:
         json.dump(menu_data, file, indent=2, ensure_ascii=False)
-
 
 workers_file = "workers.json"
 menu_file = "menu.json"
@@ -105,17 +103,25 @@ with open(workers_file, "r", encoding="utf-8") as file:
 with open(menu_file, "r", encoding="utf-8") as file:
     menu_data = json.load(file)
 
+root = tk.Tk()
+root.title("Управление персоналом и меню")
 
-process_applications()
+main_frame = ttk.Frame(root, padding=20)
+main_frame.grid()
 
+process_applications_button = ttk.Button(main_frame, text="Рассмотреть заявки", command=process_applications)
+process_applications_button.grid(row=0, column=0, padx=10, pady=10)
 
-while True:
-    choice = input("1. Уволить или повысить работника\n2. Добавить блюдо в меню\n3. Выйти\nВыберите опцию: ")
-    if choice == "1":
-        manage_workers()
-    elif choice == "2":
-        add_menu_item()
-    elif choice == "3":
-        break
-    else:
-        print("Неверный выбор, пожалуйста, попробуйте снова.")
+manage_workers_button = ttk.Button(main_frame, text="Уволить работника", command=manage_workers)
+manage_workers_button.grid(row=1, column=0, padx=10, pady=10)
+
+promote_worker_button = ttk.Button(main_frame, text="Повысить работника", command=promote_worker)
+promote_worker_button.grid(row=2, column=0, padx=10, pady=10)
+
+add_menu_item_button = ttk.Button(main_frame, text="Добавить блюдо в меню", command=add_menu_item)
+add_menu_item_button.grid(row=3, column=0, padx=10, pady=10)
+
+exit_button = ttk.Button(main_frame, text="Выйти", command=root.quit)
+exit_button.grid(row=4, column=0, padx=10, pady=10)
+
+root.mainloop()
