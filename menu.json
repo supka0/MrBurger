@@ -1,57 +1,177 @@
 {
   "menu_items": [
-    {"name": "Гамбургер", "price": 120},
-    {"name": "Чизбургер", "price": 180},
-    {"name": "Двойной Гамбургер", "price": 240},
-    {"name": "Двойной Чизбургер", "price": 360},
-    {"name": "Крабсбургер", "price": 110},
-    {"name": "Кока-кола", "price": 70},
-    {"name": "Фанта", "price": 60},
-    {"name": "Спрайт", "price": 50},
-    {"name": "Шейк", "price": 100},
-    {"name": "Картофель фри", "price": 50},
-    {"name": "Крылышки", "price": 80},
-    {"name": "Ножки", "price": 90},
-    {"name": "Наггетсы", "price": 70},
-    {"name": "Соус", "price": null}
+    {
+      "name": "Гамбургер",
+      "price": 120
+    },
+    {
+      "name": "Чизбургер",
+      "price": 180
+    },
+    {
+      "name": "Двойной Гамбургер",
+      "price": 240
+    },
+    {
+      "name": "Двойной Чизбургер",
+      "price": 360
+    },
+    {
+      "name": "Крабсбургер",
+      "price": 110
+    },
+    {
+      "name": "Кока-кола",
+      "price": 70
+    },
+    {
+      "name": "Фанта",
+      "price": 60
+    },
+    {
+      "name": "Спрайт",
+      "price": 50
+    },
+    {
+      "name": "Шейк",
+      "price": 100
+    },
+    {
+      "name": "Картофель фри",
+      "price": 50
+    },
+    {
+      "name": "Крылышки",
+      "price": 80
+    },
+    {
+      "name": "Ножки",
+      "price": 90
+    },
+    {
+      "name": "Наггетсы",
+      "price": 70
+    },
+    {
+      "name": "Соус",
+      "price": 20
+    }
   ],
   "burger_ingredients": [
-    {"name": "Котлета", "price": 40},
-    {"name": "Сыр", "price": 30},
-    {"name": "Салат", "price": 10},
-    {"name": "Соус", "price": 20},
-    {"name": "Помидор", "price": 15}
+    {
+      "name": "Котлета",
+      "price": 40
+    },
+    {
+      "name": "Сыр",
+      "price": 30
+    },
+    {
+      "name": "Салат",
+      "price": 10
+    },
+    {
+      "name": "Соус",
+      "price": 20
+    },
+    {
+      "name": "Помидор",
+      "price": 15
+    }
   ],
   "double_burger_ingredients": [
-    {"name": "Двойная Котлета", "price": 80},
-    {"name": "Сыр", "price": 30},
-    {"name": "Салат", "price": 10},
-    {"name": "Соус", "price": 20},
-    {"name": "Помидор", "price": 15}
+    {
+      "name": "Двойная Котлета",
+      "price": 80
+    },
+    {
+      "name": "Сыр",
+      "price": 30
+    },
+    {
+      "name": "Салат",
+      "price": 10
+    },
+    {
+      "name": "Соус",
+      "price": 20
+    },
+    {
+      "name": "Помидор",
+      "price": 15
+    }
   ],
   "cheeseburger_ingredients": [
-    {"name": "Котлета", "price": 40},
-    {"name": "двойной Сыр", "price": 45},
-    {"name": "Салат", "price": 10},
-    {"name": "Соус", "price": 20}
+    {
+      "name": "Котлета",
+      "price": 40
+    },
+    {
+      "name": "двойной Сыр",
+      "price": 45
+    },
+    {
+      "name": "Салат",
+      "price": 10
+    },
+    {
+      "name": "Соус",
+      "price": 20
+    }
   ],
   "double_cheeseburger_ingredients": [
-    {"name": "Котлета", "price": 40},
-    {"name": "Тройной Сыр", "price": 60},
-    {"name": "Салат", "price": 10},
-    {"name": "Соус", "price": 20}
+    {
+      "name": "Котлета",
+      "price": 40
+    },
+    {
+      "name": "Тройной Сыр",
+      "price": 60
+    },
+    {
+      "name": "Салат",
+      "price": 10
+    },
+    {
+      "name": "Соус",
+      "price": 20
+    }
   ],
   "crabsburger_ingredients": [
-    {"name": "Крабовые палочки", "price": 50},
-    {"name": "Салат", "price": 10},
-    {"name": "Соус", "price": 20},
-    {"name": "Помидор", "price": 15}
+    {
+      "name": "Крабовые палочки",
+      "price": 50
+    },
+    {
+      "name": "Салат",
+      "price": 10
+    },
+    {
+      "name": "Соус",
+      "price": 20
+    },
+    {
+      "name": "Помидор",
+      "price": 15
+    }
   ],
   "shake_ingredients": [
-    {"name": "Молоко", "price": 10},
-    {"name": "Сироп", "price": 15},
-    {"name": "Шоколадная крошка", "price": 20},
-    {"name": "Орехи", "price": 25}
+    {
+      "name": "Молоко",
+      "price": 10
+    },
+    {
+      "name": "Сироп",
+      "price": 15
+    },
+    {
+      "name": "Шоколадная крошка",
+      "price": 20
+    },
+    {
+      "name": "Орехи",
+      "price": 25
+    }
   ],
   "shake_flavors": [
     "Классический",
