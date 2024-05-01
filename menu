@@ -110,15 +110,21 @@ def select_size(item_name):
     return selected_size
 
 def select_sauces(item_name):
-    print('Выберите соусы (введите номера через запятую):')
+    print(f'Выберите соусы для {item_name} (введите номера через запятую, или нажмите Enter для пропуска):')
     for i, sauce in enumerate(sauces, 1):
-        print(f'{i}. {sauce} ({20 if sauce else 0} руб.)')
-    selected = input('Введите номера соусов (или нажмите Enter, чтобы пропустить): ') or ''
-    selected_sauces = [sauces[int(i)-1] for i in selected.split(',') if i.isdigit()]
-    sauce_costs = [f'{sauce} ({20 if sauce else 0} руб.)' for sauce in selected_sauces]
-    print(f'Выбранные соусы: {", ".join(sauce_costs)}')
-    print(f'Стоимость соусов: {sum(20 if sauce else 0 for sauce in selected_sauces)} руб.')
+        print(f'{i}. {sauce}')
+    choices = input('Выбранные соусы: ')
+    selected_sauces = []
+
+    if choices:
+        for choice in choices.split(','):
+            if choice.isdigit() and 1 <= int(choice) <= len(sauces):
+                selected_sauces.append(sauces[int(choice) - 1])
+            else:
+                print(f'Неверный выбор: {choice}')
+
     return selected_sauces
+
 
 def select_shake_flavor(item_name):
     print('Выберите вкус шейка:')
@@ -145,19 +151,27 @@ def print_basket():
         else:
             item_price = get_item_price(item_name)
             print(f'- {item_name} ({item_price} руб.)')
-            total_cost += item_cost
+            total_cost += item_price
             if customizations:
                 ingredients, size, sauces, flavor = customizations
                 if ingredients:
                     print('   Ингредиенты:', ', '.join(f'{ingr.name} ({ingr.price} руб.)' for ingr in ingredients))
+                    total_cost += sum(ingr.price for ingr in ingredients)
                 if size:
-                    print(f'   Размер: {size} ({sizes.get(size, 0)} руб.)')
+                    size_price = sizes.get(size, 0)
+                    print(f'   Размер: {size} ({size_price} руб.)')
+                    total_cost += size_price
                 if sauces:
-                    sauce_costs = [f'{sauce} ({20 if sauce else 0} руб.)' for sauce in sauces]
+                    sauce_costs = [f'{sauce}' for sauce in sauces]
+                    sauce_count = len(sauces)
                     print(f'   Соусы: {", ".join(sauce_costs)}')
+                    total_cost += sauce_count * 20 - 20
                 if flavor:
-                    print(f'   Вкус: {flavor} ({20 if flavor != "Классический" else 0} руб.)')
+                    flavor_price = 20 if flavor != "Классический" else 0
+                    print(f'   Вкус: {flavor} ({flavor_price} руб.)')
+                    total_cost += flavor_price
     print(f'Итоговая стоимость: {total_cost} руб.')
+
 
 
 
