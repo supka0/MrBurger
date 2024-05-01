@@ -5,15 +5,15 @@
     {"name": "Двойной Гамбургер", "price": 240},
     {"name": "Двойной Чизбургер", "price": 360},
     {"name": "Крабсбургер", "price": 110},
-    {"name": "Картофель фри", "price": 50},
     {"name": "Кока-кола", "price": 70},
     {"name": "Фанта", "price": 60},
     {"name": "Спрайт", "price": 50},
     {"name": "Шейк", "price": 100},
+    {"name": "Картофель фри", "price": 50},
     {"name": "Крылышки", "price": 80},
     {"name": "Ножки", "price": 90},
-    {"name": "Нагетсы", "price": 20},
-    {"name": "Соус"}
+    {"name": "Наггетсы", "price": 70},
+    {"name": "Соус", "price": null}
   ],
   "burger_ingredients": [
     {"name": "Котлета", "price": 40},
@@ -50,7 +50,7 @@
   "shake_ingredients": [
     {"name": "Молоко", "price": 10},
     {"name": "Сироп", "price": 15},
-    {"name": "Шоколад", "price": 20},
+    {"name": "Шоколадная крошка", "price": 20},
     {"name": "Орехи", "price": 25}
   ],
   "shake_flavors": [
