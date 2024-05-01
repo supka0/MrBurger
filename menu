@@ -1,5 +1,6 @@
 import json
 from collections import namedtuple
+import itertools
 
 with open('menu.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
@@ -25,11 +26,12 @@ sizes = data['sizes']
 
 basket = []
 
-
-
-
-def add_to_basket(item_name, customizations=None):
-    basket.append((item_name, customizations))
+def add_to_basket(item_name, customizations=None, cost=None):
+    if cost is None:
+        item_price = get_item_price(item_name)
+        customization_cost = get_customization_cost(customizations)
+        cost = customization_cost + (item_price if item_price is not None else 0)
+    basket.append((item_name, customizations, cost))
 
 def get_item_price(item_name):
     item = next((item for item in menu_items if item.name == item_name), None)
@@ -44,6 +46,7 @@ def get_customization_cost(customizations):
         cost += sum(20 if sauce else 0 for sauce in sauces)
         cost += 20 if flavor and flavor != 'Классический' else 0
     return cost
+
 
 def customize_item(item_name):
     ingredients = get_ingredients(item_name)
@@ -130,54 +133,119 @@ def select_shake_flavor(item_name):
         print(f'Выбранный вкус: {selected_flavor} ({20 if selected_flavor != "Классический" else 0} руб.)')
     return selected_flavor
 
+
+
 def print_basket():
     total_cost = 0
     print('Корзина:')
-    for item_name, customizations in basket:
-        item_price = get_item_price(item_name)
-        customization_cost = get_customization_cost(customizations)
-        current_item_cost = customization_cost
-        if item_price is not None:
-            current_item_cost += item_price
-        total_cost += current_item_cost
-        print(f'- {item_name}', end='')
-        if item_price is not None:
-            print(f' ({item_price})', end='')
-        print()
-        if customizations:
-            ingredients, size, sauces, flavor = customizations
-            if ingredients:
-                print('   Ингредиенты:', ', '.join(f'{ingr.name} ({ingr.price} руб.)' for ingr in ingredients))
-            if size:
-                print(f'   Размер: {size} ({sizes.get(size, 0)} руб.)')
-            if sauces:
-                sauce_costs = [f'{sauce} ({20 if sauce else 0} руб.)' for sauce in sauces]
-                print(f'   Соусы: {", ".join(sauce_costs)}')
-            if flavor:
-                print(f'   Вкус: {flavor} ({20 if flavor != "Классический" else 0} руб.)')
+    for item_name, customizations, item_cost in basket:
+        if item_name.startswith('Комбо:'):
+            print(f'- {item_name} ({item_cost} руб.)')
+            total_cost += item_cost
+        else:
+            item_price = get_item_price(item_name)
+            print(f'- {item_name} ({item_price} руб.)')
+            total_cost += item_cost
+            if customizations:
+                ingredients, size, sauces, flavor = customizations
+                if ingredients:
+                    print('   Ингредиенты:', ', '.join(f'{ingr.name} ({ingr.price} руб.)' for ingr in ingredients))
+                if size:
+                    print(f'   Размер: {size} ({sizes.get(size, 0)} руб.)')
+                if sauces:
+                    sauce_costs = [f'{sauce} ({20 if sauce else 0} руб.)' for sauce in sauces]
+                    print(f'   Соусы: {", ".join(sauce_costs)}')
+                if flavor:
+                    print(f'   Вкус: {flavor} ({20 if flavor != "Классический" else 0} руб.)')
     print(f'Итоговая стоимость: {total_cost} руб.')
 
-def process_payment(total_cost):
-    total_cost = sum(get_item_price(item) + get_customization_cost(customizations) if get_item_price(item) is not None else get_customization_cost(customizations) for item, customizations in basket)
-    if total_cost > 0:
-        while True:
-            payment_amount = input(f'Внесите сумму не менее {total_cost} руб. (или введите "отмена" для выхода): ')
-            if payment_amount.lower() == 'отмена':
-                return False
-            try:
-                payment_amount = float(payment_amount)
-                if payment_amount >= total_cost:
-                    change = payment_amount - total_cost
-                    print(f'Спасибо за оплату! Ваша сдача: {change:.2f} руб.')
-                    basket.clear()
-                    return True
-                else:
-                    print(f'Недостаточно средств. Требуется еще {total_cost - payment_amount:.2f} руб.')
-            except ValueError:
-                print('Неверный формат суммы. Попробуйте снова.')
+
+
+def process_payment(discount):
+    total_cost = sum(item_cost + get_customization_cost(customizations) for _, customizations, item_cost in basket)
+    combo_cost = sum(item_cost for item_name, customizations, item_cost in basket if item_name == "Комбо")
+    total_cost += combo_cost
+
+    discounted_cost = int(total_cost * (1 - discount / 100) + 0.99) if discount else total_cost
+
+    payment = int(input('Введите сумму для оплаты: '))
+
+    if payment >= discounted_cost:
+        change = payment - discounted_cost
+        print(f'Спасибо за покупку! Ваша сдача: {change} руб.')
+        basket.clear()
     else:
-        print('Корзина пуста. Добавьте блюда в корзину для оформления заказа.')
-        return False
+        print('Недостаточно средств для оплаты.')
+
+
+
+def generate_combos(burgers, drinks, snacks, preferences=None):
+    all_burgers = [item.name for item in menu_items if item.name in burgers]
+    all_drinks = [item.name for item in menu_items if item.name in drinks]
+    all_snacks = [item.name for item in menu_items if item.name in snacks]
+
+    if preferences:
+        preferred_burgers = [burger for burger in preferences if burger in burgers]
+        preferred_drinks = [drink for drink in preferences if drink in drinks]
+        preferred_snacks = [snack for snack in preferences if snack in snacks]
+    else:
+        preferred_burgers, preferred_drinks, preferred_snacks = [], [], []
+
+    combos = []
+
+    for burger_combo in itertools.product(preferred_burgers or all_burgers, repeat=max_burgers):
+        for drink_combo in itertools.product(preferred_drinks or all_drinks, repeat=max_drinks):
+            for snack_combo in itertools.product(preferred_snacks or all_snacks, repeat=max_snacks):
+                combo = list(burger_combo) + list(drink_combo) + list(snack_combo)
+                combo_cost = sum(get_item_price(item) for item in combo)
+                discounted_cost = int(combo_cost * 0.8 + 0.99)
+                combos.append((combo, discounted_cost))
+
+    combos.sort(key=lambda x: x[1])
+    return combos
+
+
+def select_combo():
+    global max_burgers, max_drinks, max_snacks
+
+    burgers = ['Гамбургер', 'Чизбургер', 'Двойной Гамбургер', 'Двойной Чизбургер', 'Крабсбургер']
+    drinks = ['Кока-кола', 'Фанта', 'Спрайт', 'Шейк']
+    snacks = ['Крылышки', 'Ножки', 'Наггетсы']
+
+    max_burgers = int(input('Введите максимальное количество бургеров (не больше 3): ') or 0)
+    max_drinks = int(input('Введите максимальное количество напитков (не больше 3): ') or 0)
+    max_snacks = int(input('Введите максимальное количество закусок (не больше 3): ') or 0)
+
+    if max_burgers > 3 or max_drinks > 3 or max_snacks > 3:
+        print('Максимальное количество элементов в каждой категории не должно превышать 3.')
+        return
+
+    preferences = input('Введите предпочтения через запятую (или нажмите Enter для пропуска): ').split(',')
+    preferences = [pref.strip() for pref in preferences]
+
+    combos = generate_combos(burgers, drinks, snacks, preferences)
+
+    if not combos:
+        print('Не удалось сгенерировать комбинации.')
+        return
+
+    print('Комбо:')
+    for i, (combo, cost) in enumerate(combos, 1):
+        print(f'{i}. {", ".join(combo)} ({cost} руб.)')
+
+    choice = input('Введите номера комбо через запятую (или 0 для возврата в меню): ')
+    if choice == '0':
+        return
+
+    selected_combos = []
+    for idx in choice.split(','):
+        if idx.isdigit() and 1 <= int(idx) <= len(combos):
+            selected_combos.append(combos[int(idx) - 1])
+
+    for combo, cost in selected_combos:
+        add_to_basket(f'Комбо: {", ".join(combo)}', cost=cost)
+
+
 
 def main():
     while True:
@@ -188,19 +256,22 @@ def main():
             else:
                 print(f'{i}. {item.name} ({item.price}) руб.')
         print('0. Просмотр корзины')
+        print('c. Создать комбо')
         print('q. Выход')
+
         choice = input('Введите номер пункта меню: ').lower()
         if choice == 'q':
             break
         elif choice == '0':
             print_basket()
             process_payment(0)
+        elif choice == 'c':
+            select_combo()
         elif choice.isdigit() and 1 <= int(choice) <= len(menu_items):
             item_name = menu_items[int(choice)-1].name
             customize_item(item_name)
         else:
             print('Неверный выбор. Попробуйте снова.')
-
 
 if __name__ == '__main__':
     main()
