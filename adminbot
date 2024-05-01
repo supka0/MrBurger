@@ -1,60 +1,121 @@
-import telebot
-from telebot import types
 import json
+import string
+import random
+import os
 
-bot = telebot.TeleBot('Token')
+def generate_unique_id():
+    while True:
+        new_id = ''.join(random.choices(string.digits, k=3)) + ''.join(random.choices(string.ascii_letters, k=3))
+        if new_id not in [worker['id'] for worker in workers]:
+            return new_id
 
-user_state = {}
-
-with open('employees.json', 'r') as employees:
-    employees_1 = json.load(employees)
-
-# Обработчик команды /start
-@bot.message_handler(commands=['start'])
-def password_start(message):
-    user_state[message.chat.id] = "waiting_password"
-    bot.reply_to(message, 'Введите пароль для дальнейшей работы')
-
-
-@bot.message_handler(func=lambda message: True)
-def password_message(message):
-    if user_state.get(message.chat.id) == "waiting_password":
-        if message.text == '1646868':
-            bot.reply_to(message, 'Правильный пароль')
-            del user_state[message.chat.id]
-            accept_button = types.KeyboardButton('Принять сотрудника')
-            reject_button = types.KeyboardButton('Отклонить сотрудника')
-            keyboard = types.ReplyKeyboardMarkup(row_width=1)
-            keyboard.add(accept_button, reject_button)
-            bot.send_message(message.chat.id, 'Выберите действие:', reply_markup=keyboard)
+def process_applications():
+    for application in applications[:]:
+        print(json.dumps(application, indent=2, ensure_ascii=False))
+        response = input("Принять или отклонить (принять/отклонить)? ").lower()
+        if response == "отклонить":
+            applications.remove(application)
+            save_applications()
+        elif response == "принять":
+            applications.remove(application)
+            save_applications()
+            new_worker = {
+                "id": generate_unique_id(),
+                "title": "Младший кассир",
+                "application": application
+            }
+            workers.append(new_worker)
+            save_workers()
         else:
-            bot.reply_to(message, 'Неверный пароль: ' + message.text)
+            print("Неверный ввод, пожалуйста, попробуйте снова.")
+
+def manage_workers():
+    choice = input("Уволить работника или повысить (уволить/повысить)? ").lower()
+    if choice == "уволить":
+        worker_id = input("Введите ID работника для увольнения: ")
+        for worker in workers:
+            if worker['id'] == worker_id:
+                workers.remove(worker)
+                save_workers()
+                print(f"Работник с ID {worker_id} уволен.")
+                break
+        else:
+            print(f"Работник с ID {worker_id} не найден.")
+    elif choice == "повысить":
+        promote_worker()
     else:
-        bot.reply_to(message, 'Простите, я не понимаю. Введите /start для начала')
+        print("Неверный ввод, пожалуйста, попробуйте снова.")
 
-# Обработчик кнопок
-@bot.message_handler(func=lambda message: message.text in ['Принять сотрудника', 'Отклонить сотрудника'])
-def handle_button(message):
-    if message.text == 'Принять сотрудника':
-        # Ваш код для принятия сотрудника
-        bot.reply_to(message, 'Сотрудник принят')
-    elif message.text == 'Отклонить сотрудника':
-        # Ваш код для отклонения сотрудника
-        bot.reply_to(message, 'Выберите сотрудника для отклонения:')
-        for employee in employees_1:
-            bot.send_message(message.chat.id, f"Имя сотрудника: {employee['name']}")
-            bot.register_next_step_handler(message, reject_employee)
+def promote_worker():
+    worker_id = input("Введите ID работника для повышения: ")
+    for worker in workers:
+        if worker['id'] == worker_id:
+            if worker['title'] == "Младший кассир":
+                worker['title'] = "Старший кассир"
+                save_workers()
+                print(f"Работник с ID {worker_id} повышен до Старшего кассира.")
+            elif worker['title'] == "Старший кассир":
+                worker['title'] = "Менеджер"
+                save_workers()
+                print(f"Работник с ID {worker_id} повышен до Менеджера.")
+            else:
+                print(f"Работник с ID {worker_id} уже является Менеджером, дальнейшее повышение невозможно.")
+            break
+    else:
+        print(f"Работник с ID {worker_id} не найден.")
 
-def reject_employee(message):
-    for idx, employee in enumerate(employees_1):
-        if employee['name'] == message.text:
-            del employees_1[idx]
-            bot.reply_to(message, f"Сотрудник {message.text} удален")
-            # После удаления сотрудника из списка обновляем JSON файл
-            with open('employees.json', 'w') as file:
-                json.dump(employees_1, file, indent=4)
-            return
-    bot.reply_to(message, f"Сотрудник {message.text} не найден")
+def add_menu_item():
+    name = input("Введите название блюда: ")
+    price = input("Введите цену блюда: ")
+    new_item = {"name": name, "price": int(price)}
+    menu_data["menu_items"].append(new_item)
+    save_menu_data()
 
-# Запускаем бота
-bot.polling()
+def save_workers():
+    with open("workers.json", "w", encoding="utf-8") as file:
+        json.dump(workers, file, indent=2, ensure_ascii=False)
+
+def save_applications():
+    with open("applications.json", "w", encoding="utf-8") as file:
+        json.dump(applications, file, indent=2, ensure_ascii=False)
+
+def save_menu_data():
+    with open("menu.json", "w", encoding="utf-8") as file:
+        json.dump(menu_data, file, indent=2, ensure_ascii=False)
+
+
+workers_file = "workers.json"
+menu_file = "menu.json"
+applications_file = "applications.json"
+
+if not os.path.exists(workers_file):
+    with open(workers_file, "w", encoding="utf-8") as file:
+        json.dump([], file)
+
+if not os.path.exists(applications_file):
+    with open(applications_file, "w", encoding="utf-8") as file:
+        json.dump([], file)
+
+with open(applications_file, "r", encoding="utf-8") as file:
+    applications = json.load(file)
+
+with open(workers_file, "r", encoding="utf-8") as file:
+    workers = json.load(file)
+
+with open(menu_file, "r", encoding="utf-8") as file:
+    menu_data = json.load(file)
+
+
+process_applications()
+
+
+while True:
+    choice = input("1. Уволить или повысить работника\n2. Добавить блюдо в меню\n3. Выйти\nВыберите опцию: ")
+    if choice == "1":
+        manage_workers()
+    elif choice == "2":
+        add_menu_item()
+    elif choice == "3":
+        break
+    else:
+        print("Неверный выбор, пожалуйста, попробуйте снова.")
