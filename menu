@@ -30,8 +30,8 @@ sizes = data['sizes']
 
 basket = []
 
-# Функции для добавления в корзину, получения цены и стоимости кастомизации
-def add_to_basket(item_name, customizations=None, cost=None):
+
+def combo_add_to_basket(item_name, customizations=None, cost=None):
     if cost is None:
         item_price = get_item_price(item_name)
         customization_cost = get_customization_cost(customizations)
@@ -228,31 +228,6 @@ def customize_item(item_name):
 
     root.wait_window(customize_window)
 
-    def add_to_basket():
-        selected = [ingredients[i] for i, var in enumerate(ingredient_vars) if var.get()]
-        selected_ingredients.extend(selected)
-        selected_size = size_var.get() if size_dropdown else None
-        selected_sauces = [sauces[i] for i, var in enumerate(sauce_vars) if var.get()] if sauce_frame else []
-        selected_flavor = flavor_var.get() if flavor_dropdown else None
-        basket.append((item_name, (selected_ingredients, selected_size, selected_sauces, selected_flavor), get_item_price(item_name)))
-        customize_window.destroy()
-
-    add_button = ttk.Button(frame, text='Добавить в корзину', command=add_to_basket)
-    add_button.pack(pady=10)
-
-    root.wait_window(customize_window)
-
-
-    def add_to_basket():
-        selected = [ingredients[i] for i, var in enumerate(ingredient_vars) if var.get()]
-        selected_ingredients.extend(selected)
-        basket.append((item_name, (selected_ingredients, None, [], None), get_item_price(item_name)))
-        customize_window.destroy()
-
-    add_button = ttk.Button(frame, text='Добавить в корзину', command=add_to_basket)
-    add_button.pack(pady=10)
-
-    root.wait_window(customize_window)
 
 
 def get_ingredients(item_name):
@@ -377,7 +352,7 @@ def select_combo():
         def confirm_combos():
             selected_combos = [(combos[var.get()-1][0], combos[var.get()-1][1]) for var in combo_vars if var.get() != 0]
             for combo, cost in selected_combos:
-                add_to_basket(f'Комбо: {", ".join(combo)}', cost=cost)
+                combo_add_to_basket(f'Комбо: {", ".join(combo)}', cost=cost)
             combo_list.destroy()
 
         confirm_button = ttk.Button(combo_list, text='Подтвердить', command=confirm_combos)
