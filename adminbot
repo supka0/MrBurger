@@ -160,14 +160,14 @@ def main_window():
     refresh_workers_button = ttk.Button(main_frame, text="Обновить список сотрудников", command=lambda: show_workers(text_area))
     refresh_workers_button.grid(row=6, column=0, padx=10, pady=10)
 
-    show_workers(text_area)  # Отображаем список сотрудников при запуске
+    show_workers(text_area)
 
     exit_button = ttk.Button(main_frame, text="Выйти", command=root.quit)
     exit_button.grid(row=7, column=0, padx=10, pady=10)
 
     root.mainloop()
 
-# Загрузка данных из файлов
+
 with open("workers.json", "r", encoding="utf-8") as file:
     workers = json.load(file)
 
