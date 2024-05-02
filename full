@@ -2,26 +2,14 @@ import json
 from collections import namedtuple
 import itertools
 import tkinter as tk
+from datetime import datetime
 import hashlib
 import random
 import string
 from tkinter import simpledialog, messagebox, ttk, font
-from datetime import datetime
 
-
-# Загрузка данных из файлов
-with open("workers.json", "r", encoding="utf-8") as file:
-    workers = json.load(file)
-
-with open("applications.json", "r", encoding="utf-8") as file:
-    applications = json.load(file)
-
-with open("menu.json", "r", encoding="utf-8") as file:
-    menu_data = json.load(file)
 with open('menu.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
-
-
 
 MenuItem = namedtuple('MenuItem', 'name price')
 Ingredient = namedtuple('Ingredient', 'name price')
@@ -44,8 +32,8 @@ sizes = data['sizes']
 
 basket = []
 
-# Функции для добавления в корзину, получения цены и стоимости кастомизации
-def add_to_basket(item_name, customizations=None, cost=None):
+
+def combo_add_to_basket(item_name, customizations=None, cost=None):
     if cost is None:
         item_price = get_item_price(item_name)
         customization_cost = get_customization_cost(customizations)
@@ -242,31 +230,6 @@ def customize_item(item_name):
 
     root.wait_window(customize_window)
 
-    def add_to_basket():
-        selected = [ingredients[i] for i, var in enumerate(ingredient_vars) if var.get()]
-        selected_ingredients.extend(selected)
-        selected_size = size_var.get() if size_dropdown else None
-        selected_sauces = [sauces[i] for i, var in enumerate(sauce_vars) if var.get()] if sauce_frame else []
-        selected_flavor = flavor_var.get() if flavor_dropdown else None
-        basket.append((item_name, (selected_ingredients, selected_size, selected_sauces, selected_flavor), get_item_price(item_name)))
-        customize_window.destroy()
-
-    add_button = ttk.Button(frame, text='Добавить в корзину', command=add_to_basket)
-    add_button.pack(pady=10)
-
-    root.wait_window(customize_window)
-
-
-    def add_to_basket():
-        selected = [ingredients[i] for i, var in enumerate(ingredient_vars) if var.get()]
-        selected_ingredients.extend(selected)
-        basket.append((item_name, (selected_ingredients, None, [], None), get_item_price(item_name)))
-        customize_window.destroy()
-
-    add_button = ttk.Button(frame, text='Добавить в корзину', command=add_to_basket)
-    add_button.pack(pady=10)
-
-    root.wait_window(customize_window)
 
 
 def get_ingredients(item_name):
@@ -391,7 +354,7 @@ def select_combo():
         def confirm_combos():
             selected_combos = [(combos[var.get()-1][0], combos[var.get()-1][1]) for var in combo_vars if var.get() != 0]
             for combo, cost in selected_combos:
-                add_to_basket(f'Комбо: {", ".join(combo)}', cost=cost)
+                combo_add_to_basket(f'Комбо: {", ".join(combo)}', cost=cost)
             combo_list.destroy()
 
         confirm_button = ttk.Button(combo_list, text='Подтвердить', command=confirm_combos)
@@ -412,16 +375,27 @@ def print_basket():
     basket_frame.pack(padx=10, pady=10)
 
     total_cost = 0
-    for item_name, customizations, item_cost in basket:
+    basket_items = []
+
+    for i, (item_name, customizations, item_cost) in enumerate(basket):
         if item_name.startswith('Комбо:'):
             item_label = ttk.Label(basket_frame, text=f'- {item_name} ({item_cost} руб.)')
             item_label.pack(anchor='w')
             total_cost += item_cost
+            basket_items.append((i, item_name, None, item_cost))
+
+            remove_button = ttk.Button(basket_frame, text='-', command=lambda idx=i: confirm_removal(idx, basket_window))
+            remove_button.pack(anchor='e', padx=5)
         else:
             item_price = get_item_price(item_name)
             item_label = ttk.Label(basket_frame, text=f'- {item_name} ({item_price} руб.)')
             item_label.pack(anchor='w')
             total_cost += item_price
+            basket_items.append((i, item_name, customizations, item_price))
+
+            remove_button = ttk.Button(basket_frame, text='-', command=lambda idx=i: confirm_removal(idx, basket_window))
+            remove_button.pack(anchor='e', padx=5)
+
             if customizations:
                 ingredients, size, sauces, flavor = customizations
                 if ingredients:
@@ -448,12 +422,35 @@ def print_basket():
                     flavor_label.pack(anchor='w')
                     total_cost += flavor_price
 
+
     total_label = ttk.Label(basket_frame, text=f'Итоговая стоимость: {total_cost} руб.',
                             font=('TkDefaultFont', 12, 'bold'))
     total_label.pack(pady=10)
 
     checkout_button = ttk.Button(basket_window, text='Оплатить', command=lambda: process_payment(0))
     checkout_button.pack(pady=10)
+
+    def confirm_removal(idx, window):
+        confirm_window = tk.Toplevel(window)
+        confirm_window.title('Подтверждение удаления')
+
+        confirm_label = ttk.Label(confirm_window, text='Вы действительно хотите удалить этот элемент из корзины?')
+        confirm_label.pack(pady=10)
+
+        yes_button = ttk.Button(confirm_window, text='Да', command=lambda: remove_item(idx, confirm_window, window))
+        yes_button.pack(side='left', padx=10, pady=10)
+
+        no_button = ttk.Button(confirm_window, text='Нет', command=confirm_window.destroy)
+        no_button.pack(side='left', padx=10, pady=10)
+
+    def remove_item(idx, confirm_window, basket_window):
+        confirm_window.destroy()
+        del basket[basket_items[idx][0]]
+        basket_window.destroy()
+        print_basket()
+
+    root.wait_window(basket_window)
+
 
 
 
@@ -490,149 +487,7 @@ def process_payment(discount):
 
     root.wait_window(payment_window)
 
-
-#функции админа
-def generate_unique_id():
-    while True:
-        new_id = ''.join(random.choices(string.digits, k=3)) + ''.join(random.choices(string.ascii_letters, k=3))
-        if new_id not in [worker['id'] for worker in workers]:
-            return new_id
-
-def process_applications():
-    for application in applications[:]:
-        application_str = json.dumps(application, indent=2, ensure_ascii=False)
-        response = messagebox.askquestion("Рассмотрение заявки", f"Заявка:\n{application_str}\n\nПринять?")
-        if response == "yes":
-            applications.remove(application)
-            save_applications()
-            new_worker = {
-                "id": generate_unique_id(),
-                "title": "Младший кассир",
-                "application": application
-            }
-            workers.append(new_worker)
-            save_workers()
-        elif response == "no":
-            applications.remove(application)
-            save_applications()
-
-def manage_workers():
-    choice = messagebox.askquestion("Управление сотрудниками", "Уволить или повысить работника?")
-    if choice == "no":
-        fire_worker()
-    elif choice == "yes":
-        promote_worker()
-
-def fire_worker():
-    worker_id = simpledialog.askstring("Увольнение работника", "Введите ID работника для увольнения")
-    if worker_id:
-        for worker in workers:
-            if worker['id'] == worker_id:
-                workers.remove(worker)
-                save_workers()
-                messagebox.showinfo("Успешно", f"Работник с ID {worker_id} уволен.")
-                break
-        else:
-            messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
-
-def promote_worker():
-    worker_id = simpledialog.askstring("Повышение работника", "Введите ID работника для повышения")
-    if worker_id:
-        for worker in workers:
-            if worker['id'] == worker_id:
-                if worker['title'] == "Младший кассир":
-                    worker['title'] = "Старший кассир"
-                    save_workers()
-                    messagebox.showinfo("Успешно", f"Работник с ID {worker_id} повышен до Старшего кассира.")
-                elif worker['title'] == "Старший кассир":
-                    worker['title'] = "Менеджер"
-                    save_workers()
-                    messagebox.showinfo("Успешно", f"Работник с ID {worker_id} повышен до Менеджера.")
-                else:
-                    messagebox.showerror("Ошибка", f"Работник с ID {worker_id} уже является Менеджером, дальнейшее повышение невозможно.")
-                break
-        else:
-            messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
-
-def add_menu_item():
-    name = simpledialog.askstring("Добавить блюдо", "Введите название блюда")
-    if name:
-        price = simpledialog.askinteger("Добавить блюдо", "Введите цену блюда")
-        if price:
-            new_item = {"name": name, "price": price}
-            menu_data["menu_items"].append(new_item)
-            save_menu_data()
-            messagebox.showinfo("Успешно", f"Блюдо '{name}' добавлено в меню.")
-
-def show_workers(text_area):
-    worker_list = ""
-    for worker in workers:
-        worker_list += f"Имя: {worker['application']['Имя']}\nID: {worker['id']}\nДолжность: {worker['title']}\n\n"
-
-    text_area.delete("1.0", tk.END)
-    text_area.insert(tk.END, worker_list)
-
-
-def save_workers():
-    with open("workers.json", "w", encoding="utf-8") as file:
-        json.dump(workers, file, indent=2, ensure_ascii=False)
-
-def save_applications():
-    with open("applications.json", "w", encoding="utf-8") as file:
-        json.dump(applications, file, indent=2, ensure_ascii=False)
-
-def save_menu_data():
-    with open("menu.json", "w", encoding="utf-8") as file:
-        json.dump(menu_data, file, indent=2, ensure_ascii=False)
-
-# Загрузка хеша пароля из файла
-with open("password.txt", "r", encoding="utf-8") as file:
-    PASSWORD = file.read().strip()
-
-def check_password():
-    password = simpledialog.askstring("Вход", "Введите пароль:", show="*")
-    if password:
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        if hashed_password == PASSWORD:
-            main_window()
-        else:
-            messagebox.showerror("Ошибка", "Неверный пароль.")
-
-def main_window():
-    root = tk.Tk()
-    root.title("Управление персоналом и меню")
-
-    main_frame = ttk.Frame(root, padding=20)
-    main_frame.grid()
-
-    process_applications_button = ttk.Button(main_frame, text="Рассмотреть заявки", command=process_applications)
-    process_applications_button.grid(row=0, column=0, padx=10, pady=10)
-
-    fire_worker_button = ttk.Button(main_frame, text="Уволить работника", command=fire_worker)
-    fire_worker_button.grid(row=1, column=0, padx=10, pady=10)
-
-    promote_worker_button = ttk.Button(main_frame, text="Повысить работника", command=promote_worker)
-    promote_worker_button.grid(row=2, column=0, padx=10, pady=10)
-
-    add_menu_item_button = ttk.Button(main_frame, text="Добавить блюдо в меню", command=add_menu_item)
-    add_menu_item_button.grid(row=3, column=0, padx=10, pady=10)
-
-    text_area = tk.Text(main_frame, height=10, width=40, wrap=tk.WORD)
-    text_area.grid(row=4, column=0, padx=10, pady=10)
-
-    refresh_workers_button = ttk.Button(main_frame, text="Обновить список сотрудников", command=lambda: show_workers(text_area))
-    refresh_workers_button.grid(row=5, column=0, padx=10, pady=10)
-
-    show_workers(text_area)  # Отображаем список сотрудников при запуске
-
-    exit_button = ttk.Button(main_frame, text="Выйти", command=root.quit)
-    exit_button.grid(row=6, column=0, padx=10, pady=10)
-
-    root.mainloop()
-
-#заполнение анкеты
-
-
+#анкето
 class JobApplication:
     def __init__(self, name, birth_date, work_experience, qualities):
         self.name = name
@@ -753,6 +608,183 @@ def start_applications():
     root.mainloop()
 
 
+#админка
+
+def generate_unique_id():
+    while True:
+        new_id = ''.join(random.choices(string.digits, k=3)) + ''.join(random.choices(string.ascii_letters, k=3))
+        if new_id not in [worker['id'] for worker in workers]:
+            return new_id
+
+def process_applications():
+    for application in applications[:]:
+        application_str = json.dumps(application, indent=2, ensure_ascii=False)
+        response = messagebox.askquestion("Рассмотрение заявки", f"Заявка:\n{application_str}\n\nПринять?")
+        if response == "yes":
+            applications.remove(application)
+            save_applications()
+            new_worker = {
+                "id": generate_unique_id(),
+                "title": "Младший кассир",
+                "application": application
+            }
+            workers.append(new_worker)
+            save_workers()
+        elif response == "no":
+            applications.remove(application)
+            save_applications()
+
+def manage_workers():
+    choice = messagebox.askquestion("Управление сотрудниками", "Уволить или повысить работника?")
+    if choice == "no":
+        fire_worker()
+    elif choice == "yes":
+        promote_worker()
+
+def fire_worker():
+    worker_id = simpledialog.askstring("Увольнение работника", "Введите ID работника для увольнения")
+    if worker_id:
+        for worker in workers:
+            if worker['id'] == worker_id:
+                workers.remove(worker)
+                save_workers()
+                messagebox.showinfo("Успешно", f"Работник с ID {worker_id} уволен.")
+                break
+        else:
+            messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
+
+def promote_worker():
+    worker_id = simpledialog.askstring("Повышение работника", "Введите ID работника для повышения")
+    if worker_id:
+        for worker in workers:
+            if worker['id'] == worker_id:
+                if worker['title'] == "Младший кассир":
+                    worker['title'] = "Старший кассир"
+                    save_workers()
+                    messagebox.showinfo("Успешно", f"Работник с ID {worker_id} повышен до Старшего кассира.")
+                elif worker['title'] == "Старший кассир":
+                    worker['title'] = "Менеджер"
+                    save_workers()
+                    messagebox.showinfo("Успешно", f"Работник с ID {worker_id} повышен до Менеджера.")
+                else:
+                    messagebox.showerror("Ошибка", f"Работник с ID {worker_id} уже является Менеджером, дальнейшее повышение невозможно.")
+                break
+        else:
+            messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
+
+
+def demote_worker():
+    worker_id = simpledialog.askstring("Понижение работника", "Введите ID работника для понижения")
+    if worker_id:
+        for worker in workers:
+            if worker['id'] == worker_id:
+                if worker['title'] == "Менеджер":
+                    worker['title'] = "Старший кассир"
+                    save_workers()
+                    messagebox.showinfo("Успешно", f"Работник с ID {worker_id} понижен до Старшего кассира.")
+                elif worker['title'] == "Старший кассир":
+                    worker['title'] = "Младший кассир"
+                    save_workers()
+                    messagebox.showinfo("Успешно", f"Работник с ID {worker_id} понижен до Младшего кассира.")
+                else:
+                    messagebox.showerror("Ошибка", f"Работник с ID {worker_id} уже является Младшим кассиром, дальнейшее понижение невозможно.")
+                break
+        else:
+            messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
+
+
+def add_menu_item():
+    name = simpledialog.askstring("Добавить блюдо", "Введите название блюда")
+    if name:
+        price = simpledialog.askinteger("Добавить блюдо", "Введите цену блюда")
+        if price:
+            new_item = {"name": name, "price": price}
+            menu_data["menu_items"].append(new_item)
+            save_menu_data()
+            messagebox.showinfo("Успешно", f"Блюдо '{name}' добавлено в меню.")
+
+def show_workers(text_area):
+    worker_list = ""
+    for worker in workers:
+        worker_list += f"Имя: {worker['application']['Имя']}\nID: {worker['id']}\nДолжность: {worker['title']}\n\n"
+
+    text_area.delete("1.0", tk.END)
+    text_area.insert(tk.END, worker_list)
+
+
+def save_workers():
+    with open("workers.json", "w", encoding="utf-8") as file:
+        json.dump(workers, file, indent=2, ensure_ascii=False)
+
+def save_applications():
+    with open("applications.json", "w", encoding="utf-8") as file:
+        json.dump(applications, file, indent=2, ensure_ascii=False)
+
+def save_menu_data():
+    with open("menu.json", "w", encoding="utf-8") as file:
+        json.dump(menu_data, file, indent=2, ensure_ascii=False)
+
+# Загрузка хеша пароля из файла
+with open("password.txt", "r", encoding="utf-8") as file:
+    PASSWORD = file.read().strip()
+
+def check_password():
+    password = simpledialog.askstring("Вход", "Введите пароль:", show="*")
+    if password:
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        if hashed_password == PASSWORD:
+            main_window()
+        else:
+            messagebox.showerror("Ошибка", "Неверный пароль.")
+
+def main_window():
+    root = tk.Tk()
+    root.title("Управление персоналом и меню")
+
+    main_frame = ttk.Frame(root, padding=20)
+    main_frame.grid()
+
+    process_applications_button = ttk.Button(main_frame, text="Рассмотреть заявки", command=process_applications)
+    process_applications_button.grid(row=0, column=0, padx=10, pady=10)
+
+    fire_worker_button = ttk.Button(main_frame, text="Уволить работника", command=fire_worker)
+    fire_worker_button.grid(row=1, column=0, padx=10, pady=10)
+
+    promote_worker_button = ttk.Button(main_frame, text="Повысить работника", command=promote_worker)
+    promote_worker_button.grid(row=2, column=0, padx=10, pady=10)
+
+    demote_worker_button = ttk.Button(main_frame, text="Понизить работника", command=demote_worker)
+    demote_worker_button.grid(row=3, column=0, padx=10, pady=10)
+
+    add_menu_item_button = ttk.Button(main_frame, text="Добавить блюдо в меню", command=add_menu_item)
+    add_menu_item_button.grid(row=4, column=0, padx=10, pady=10)
+
+    text_area = tk.Text(main_frame, height=10, width=40, wrap=tk.WORD)
+    text_area.grid(row=5, column=0, padx=10, pady=10)
+
+    refresh_workers_button = ttk.Button(main_frame, text="Обновить список сотрудников", command=lambda: show_workers(text_area))
+    refresh_workers_button.grid(row=6, column=0, padx=10, pady=10)
+
+    show_workers(text_area)
+
+    exit_button = ttk.Button(main_frame, text="Выйти", command=root.quit)
+    exit_button.grid(row=7, column=0, padx=10, pady=10)
+
+    root.mainloop()
+
+
+with open("workers.json", "r", encoding="utf-8") as file:
+    workers = json.load(file)
+
+with open("applications.json", "r", encoding="utf-8") as file:
+    applications = json.load(file)
+
+with open("menu.json", "r", encoding="utf-8") as file:
+    menu_data = json.load(file)
+
+
+
+
 def main_menu():
     menu_window = tk.Toplevel(root.winfo_toplevel())
     menu_window.title("Мистер Бургер")
@@ -783,14 +815,14 @@ def main_menu():
     combo_button = ttk.Button(actions_frame, text='Создать комбо', command=select_combo)
     combo_button.pack(padx=5, pady=5)
 
-    exit_button = ttk.Button(actions_frame, text='Выход', command=root.quit)
-    exit_button.pack(padx=5, pady=5)
-
     admin_button = ttk.Button(actions_frame, text='Комната Админа', command=check_password)
     admin_button.pack(padx=5, pady=5)
 
     applications_button = ttk.Button(actions_frame, text='Трудоустройство', command=start_applications)
     applications_button.pack(padx=5, pady=5)
+
+    exit_button = ttk.Button(actions_frame, text='Выход', command=root.quit)
+    exit_button.pack(padx=5, pady=5)
 
 
 root = tk.Tk()
