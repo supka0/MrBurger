@@ -67,6 +67,27 @@ def promote_worker():
         else:
             messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
 
+
+def demote_worker():
+    worker_id = simpledialog.askstring("Понижение работника", "Введите ID работника для понижения")
+    if worker_id:
+        for worker in workers:
+            if worker['id'] == worker_id:
+                if worker['title'] == "Менеджер":
+                    worker['title'] = "Старший кассир"
+                    save_workers()
+                    messagebox.showinfo("Успешно", f"Работник с ID {worker_id} понижен до Старшего кассира.")
+                elif worker['title'] == "Старший кассир":
+                    worker['title'] = "Младший кассир"
+                    save_workers()
+                    messagebox.showinfo("Успешно", f"Работник с ID {worker_id} понижен до Младшего кассира.")
+                else:
+                    messagebox.showerror("Ошибка", f"Работник с ID {worker_id} уже является Младшим кассиром, дальнейшее понижение невозможно.")
+                break
+        else:
+            messagebox.showerror("Ошибка", f"Работник с ID {worker_id} не найден.")
+
+
 def add_menu_item():
     name = simpledialog.askstring("Добавить блюдо", "Введите название блюда")
     if name:
@@ -127,19 +148,22 @@ def main_window():
     promote_worker_button = ttk.Button(main_frame, text="Повысить работника", command=promote_worker)
     promote_worker_button.grid(row=2, column=0, padx=10, pady=10)
 
+    demote_worker_button = ttk.Button(main_frame, text="Понизить работника", command=demote_worker)
+    demote_worker_button.grid(row=3, column=0, padx=10, pady=10)
+
     add_menu_item_button = ttk.Button(main_frame, text="Добавить блюдо в меню", command=add_menu_item)
-    add_menu_item_button.grid(row=3, column=0, padx=10, pady=10)
+    add_menu_item_button.grid(row=4, column=0, padx=10, pady=10)
 
     text_area = tk.Text(main_frame, height=10, width=40, wrap=tk.WORD)
-    text_area.grid(row=4, column=0, padx=10, pady=10)
+    text_area.grid(row=5, column=0, padx=10, pady=10)
 
     refresh_workers_button = ttk.Button(main_frame, text="Обновить список сотрудников", command=lambda: show_workers(text_area))
-    refresh_workers_button.grid(row=5, column=0, padx=10, pady=10)
+    refresh_workers_button.grid(row=6, column=0, padx=10, pady=10)
 
     show_workers(text_area)  # Отображаем список сотрудников при запуске
 
     exit_button = ttk.Button(main_frame, text="Выйти", command=root.quit)
-    exit_button.grid(row=6, column=0, padx=10, pady=10)
+    exit_button.grid(row=7, column=0, padx=10, pady=10)
 
     root.mainloop()
 
