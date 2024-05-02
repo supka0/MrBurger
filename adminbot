@@ -3,7 +3,7 @@ import json
 import random
 import string
 import tkinter as tk
-from tkinter import simpledialog, messagebox,ttk
+from tkinter import simpledialog, messagebox, ttk
 
 def generate_unique_id():
     while True:
@@ -77,6 +77,15 @@ def add_menu_item():
             save_menu_data()
             messagebox.showinfo("Успешно", f"Блюдо '{name}' добавлено в меню.")
 
+def show_workers(text_area):
+    worker_list = ""
+    for worker in workers:
+        worker_list += f"Имя: {worker['application']['Имя']}\nID: {worker['id']}\nДолжность: {worker['title']}\n\n"
+
+    text_area.delete("1.0", tk.END)
+    text_area.insert(tk.END, worker_list)
+
+
 def save_workers():
     with open("workers.json", "w", encoding="utf-8") as file:
         json.dump(workers, file, indent=2, ensure_ascii=False)
@@ -121,8 +130,16 @@ def main_window():
     add_menu_item_button = ttk.Button(main_frame, text="Добавить блюдо в меню", command=add_menu_item)
     add_menu_item_button.grid(row=3, column=0, padx=10, pady=10)
 
+    text_area = tk.Text(main_frame, height=10, width=40, wrap=tk.WORD)
+    text_area.grid(row=4, column=0, padx=10, pady=10)
+
+    refresh_workers_button = ttk.Button(main_frame, text="Обновить список сотрудников", command=lambda: show_workers(text_area))
+    refresh_workers_button.grid(row=5, column=0, padx=10, pady=10)
+
+    show_workers(text_area)  # Отображаем список сотрудников при запуске
+
     exit_button = ttk.Button(main_frame, text="Выйти", command=root.quit)
-    exit_button.grid(row=4, column=0, padx=10, pady=10)
+    exit_button.grid(row=6, column=0, padx=10, pady=10)
 
     root.mainloop()
 
