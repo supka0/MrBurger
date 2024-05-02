@@ -3,12 +3,22 @@ from tkinter import font
 from datetime import datetime
 import json
 
-# Загружаем данные из JSON-файла при запуске программы
+
 try:
     with open("applications.json", "r", encoding="utf-8") as file:
-        list_applications = json.load(file)
+        try:
+            list_applications = json.load(file)
+        except json.JSONDecodeError:
+            print("Файл applications.json содержит некорректные данные. Создается новый пустой файл.")
+            list_applications = []
+            with open("applications.json", "w", encoding="utf-8") as file:
+                json.dump(list_applications, file, indent=4, ensure_ascii=False)
 except FileNotFoundError:
+    print("Файл applications.json не найден. Создается новый пустой файл.")
     list_applications = []
+    with open("applications.json", "w", encoding="utf-8") as file:
+        json.dump(list_applications, file, indent=4, ensure_ascii=False)
+
 
 class JobApplication:
     def __init__(self, name, birth_date, work_experience, qualities):
@@ -44,7 +54,7 @@ class JobApplication:
                 self.estimation -= 1
 
     def criteria_qlts(self):
-        if ("трудолюбие" in self.qualities or "чистолюбие" in self.qualities) or ("ответственность" in self.qualities or "общительность" ):
+        if ("трудолюбие" in self.qualities or "чистолюбие" in self.qualities) or ("ответственность" in self.qualities or "общительность" in self.qualities):
             self.estimation += 1
 
     def employed(self):
@@ -95,32 +105,39 @@ def submit_application():
     application.criteria_qlts()
     application.employed()
 
-root = tk.Tk()
-root.title("Job Application")
+def start_applications():
+    global root, name_entry, birth_date_entry, exp_entry, qlts_entry, output_text
 
-default_font = font.nametofont("TkDefaultFont")
-default_font.configure(size=14)
-root.option_add("*Font", default_font)
+    root = tk.Tk()
+    root.title("Job Application")
 
-tk.Label(root, text="Имя:", font=("Arial", 14)).grid(row=0, column=0)
-tk.Label(root, text="Дата рождения (ГГГГ-ММ-ДД):", font=("Arial", 14)).grid(row=1, column=0)
-tk.Label(root, text="Опыт работы (лет):", font=("Arial", 14)).grid(row=2, column=0)
-tk.Label(root, text="Качества:", font=("Arial", 14)).grid(row=3, column=0)
+    default_font = font.nametofont("TkDefaultFont")
+    default_font.configure(size=14)
+    root.option_add("*Font", default_font)
 
-name_entry = tk.Entry(root, font=("Arial", 14))
-name_entry.grid(row=0, column=1)
+    tk.Label(root, text="Имя:", font=("Arial", 14)).grid(row=0, column=0)
+    tk.Label(root, text="Дата рождения (ГГГГ-ММ-ДД):", font=("Arial", 14)).grid(row=1, column=0)
+    tk.Label(root, text="Опыт работы (лет):", font=("Arial", 14)).grid(row=2, column=0)
+    tk.Label(root, text="Качества:", font=("Arial", 14)).grid(row=3, column=0)
 
-birth_date_entry = tk.Entry(root, font=("Arial", 14))
-birth_date_entry.grid(row=1, column=1)
-exp_entry = tk.Entry(root, font=("Arial", 14))
-exp_entry.grid(row=2, column=1)
-qlts_entry = tk.Entry(root, font=("Arial", 14))
-qlts_entry.grid(row=3, column=1)
+    name_entry = tk.Entry(root, font=("Arial", 14))
+    name_entry.grid(row=0, column=1)
 
-output_text = tk.Text(root, height=5, width=30)
-output_text.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
+    birth_date_entry = tk.Entry(root, font=("Arial", 14))
+    birth_date_entry.grid(row=1, column=1)
 
-submit_button = tk.Button(root, text="Отправить заявку", font=("Arial", 14), command=submit_application)
-submit_button.grid(row=4, column=0, columnspan=2)
+    exp_entry = tk.Entry(root, font=("Arial", 14))
+    exp_entry.grid(row=2, column=1)
 
-root.mainloop()
+    qlts_entry = tk.Entry(root, font=("Arial", 14))
+    qlts_entry.grid(row=3, column=1)
+
+    output_text = tk.Text(root, height=5, width=30)
+    output_text.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
+
+    submit_button = tk.Button(root, text="Отправить заявку", font=("Arial", 14), command=submit_application)
+    submit_button.grid(row=4, column=0, columnspan=2)
+
+    root.mainloop()
+
+start_applications()
